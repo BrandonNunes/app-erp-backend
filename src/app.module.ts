@@ -5,7 +5,7 @@ import { ConfigModule } from '@nestjs/config';
 import { SequelizeModule } from '@nestjs/sequelize';
 import { Client } from './app/client/entities/client.entity';
 import { Users } from './app/usuario/entities/usuario.entity';
-import { OrganizationModel } from './app/business/entities/organizacao.entity';
+import { OrganizationModel } from './app/business/entities/organization.entity';
 import { ClientModule } from './app/client/client.module';
 import { UsuarioModule } from './app/usuario/usuario.module';
 import { AuthModule } from './app/auth/auth.module';
@@ -15,6 +15,8 @@ import { BusinessModule } from './app/business/business.module';
 import { ProductModule } from './app/product/product.module';
 import {ProductModel} from "./app/product/entities/product.entity";
 import {GrupoProdutoModel} from "./app/product/entities/grupoProduto.entity";
+import {ContractModel} from "./app/business/entities/contract.entity";
+
 
 @Module({
   imports: [
@@ -27,10 +29,10 @@ import {GrupoProdutoModel} from "./app/product/entities/grupoProduto.entity";
           dialect: 'sqlite',
           database: 'MiraDev',
           host: './dev.sqlite',
-          models: [Client, Users, OrganizationModel, EmpresaModel, UsuarioEmpresaModel, ProductModel, GrupoProdutoModel],
+          models: [Client, Users, OrganizationModel, EmpresaModel, UsuarioEmpresaModel, ProductModel, GrupoProdutoModel, ContractModel],
           logging: true,
           synchronize: true,
-          autoLoadModels: true
+          autoLoadModels: true,
         }
     //     {
     //   dialect: 'mssql',
@@ -40,7 +42,7 @@ import {GrupoProdutoModel} from "./app/product/entities/grupoProduto.entity";
     //   password: process.env.DBPASS,
     //   database: 'MiraDev',
     //   schema: 'dbo',
-    //   models: [Client, Users, OrganizationModel, EmpresaModel, UsuarioEmpresaModel, ProductModel],
+    //   models: [Client, Users, OrganizationModel, EmpresaModel, UsuarioEmpresaModel, ProductModel, GrupoProdutoModel, ContractModel],
     //   logging: false
     // }
     ),

@@ -11,7 +11,7 @@ import { EmpresaModel } from '../../business/entities/company.entity';
 import { UsuarioEmpresaModel } from './usuario_empresa.entity';
 import { v4 as uuidv4 } from 'uuid';
 import {genSaltSync, hashSync} from "bcrypt";
-import {OrganizationModel} from "../../business/entities/organizacao.entity";
+import {OrganizationModel} from "../../business/entities/organization.entity";
 
 @Table({ tableName: 'usuarios' })
 export class Users extends Model {
@@ -31,7 +31,7 @@ export class Users extends Model {
   origem: string;
   @Column({ defaultValue: false })
   alterar_senha_proximo_logon: boolean;
-  @Column
+  @Column({ defaultValue: false })
   super_usuario: boolean;
   @Column({ defaultValue: false })
   usuario_master: boolean;
@@ -40,7 +40,7 @@ export class Users extends Model {
 
   @ForeignKey(() => OrganizationModel)
   @Column
-  idOrganizacao: number;
+  id_organizacao: number;
   @Column
   guid: string;
   @Column

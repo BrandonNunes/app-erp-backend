@@ -10,5 +10,5 @@ export class UsuarioEmpresaModel extends Model {
 
   @ForeignKey(() => EmpresaModel)
   @Column
-  empresa: number;
+  id_empresa: number;
 }

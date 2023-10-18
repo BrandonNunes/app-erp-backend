@@ -29,6 +29,6 @@ export class CreateUsuarioDto {
 
   @IsNotEmpty({ message: 'Uma organização deve seve ser informada.' })
   @IsNumber({}, { message: 'Tipo de dado para a organização é inválido.' })
-  idOrganizacao: number;
+  id_organizacao: number;
 
 }

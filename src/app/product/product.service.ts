@@ -5,12 +5,15 @@ import { UpdateProductDto } from './dto/update-product.dto';
 import {EmpresaModel} from "../business/entities/company.entity";
 import {ProductModel} from "./entities/product.entity";
 import { Sequelize } from "sequelize-typescript";
+import {CreateGroupProductDto} from "./dto/create-group-product.dto";
+import {GrupoProdutoModel} from "./entities/grupoProduto.entity";
 
 @Injectable()
 export class ProductService {
 
   constructor(
       @InjectModel(ProductModel) private productModel: typeof ProductModel,
+      @InjectModel(GrupoProdutoModel) private groupProductModel: typeof GrupoProdutoModel,
       private sequelize: Sequelize
   ) {
   }
@@ -49,5 +52,18 @@ export class ProductService {
 
   removeProduct(id: number) {
     return this.productModel.destroy({ where: {id} });
+  }
+// Groups
+  async createNewGroupProduct(newGroup: CreateGroupProductDto) {
+    return this.groupProductModel.create(newGroup as any);
+  }
+
+  async findAllGroupsProducts(empresa: string) {
+    if (empresa) {
+      return this.groupProductModel.findAll({
+        where: { id_empresa: empresa }
+      })
+    }
+    return this.groupProductModel.findAll();
   }
 }

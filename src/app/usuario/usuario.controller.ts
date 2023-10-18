@@ -19,6 +19,7 @@ import { UpdateUsuarioDto } from './dto/update-usuario.dto';
 // import { compareSync } from 'bcrypt';
 import { AuthGuard } from '../auth/auth.guard';
 import { Sequelize } from 'sequelize-typescript';
+import {BusinessService} from "../business/business.service";
 
 export type QueryParamsUsesTypes = {
   empresa: string;
@@ -31,18 +32,19 @@ export type QueryParamsUsesTypes = {
 export class UsuarioController {
   constructor(
     private readonly usuarioService: UsuarioService,
+    private companyService: BusinessService,
     private sequelize: Sequelize,
   ) {}
 
   // CRIAR NOVO USUARIO
-  @UseGuards(AuthGuard)
+  // @UseGuards(AuthGuard)
   @Post()
   async create(
     @Res() response: Response,
     @Body() createUsuarioDto: CreateUsuarioDto,
   ) {
     try {
-      const organization = createUsuarioDto.idOrganizacao;
+      const organization = createUsuarioDto.id_organizacao;
       const validOrg =
         await this.usuarioService.validateOrganization(organization);
       if (!validOrg) {
@@ -66,7 +68,10 @@ export class UsuarioController {
       const newUser = await this.usuarioService.createUser(createUsuarioDto);
       return response
         .status(HttpStatus.CREATED)
-        .json({ ...createUsuarioDto, id: newUser.id, senha: undefined });
+        .json({ message: 'Registro inserido com sucesso.', usuario: {
+            ...newUser.dataValues,
+            senha: undefined
+          } });
     } catch (erro) {
       console.log(erro);
       return response.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
@@ -77,13 +82,12 @@ export class UsuarioController {
   }
 
   // OBTER USUARIOS
-  @UseGuards(AuthGuard)
+  // @UseGuards(AuthGuard)
   @Get()
   async findUsers(
     @Res() response: Response,
     @Query() queryParams: QueryParamsUsesTypes,
   ) {
-    console.log(queryParams);
     if (!queryParams.organizacao) {
       return response.status(HttpStatus.BAD_REQUEST).json({
         message: 'O parametro [organizacao] deve ser informado.',
@@ -101,7 +105,7 @@ export class UsuarioController {
   }
 
   // ATUALIZAR USUARIO
-  @UseGuards(AuthGuard)
+  // @UseGuards(AuthGuard)
   @Put(':id')
   async update(
     @Res() response: Response,
@@ -113,7 +117,7 @@ export class UsuarioController {
         .status(HttpStatus.BAD_REQUEST)
         .json({ message: 'Usuário inválido' });
     }
-    const user = await this.usuarioService.findOne(+id, updateUsuarioDto.idOrganizacao);
+    const user = await this.usuarioService.findOne(+id, updateUsuarioDto.id_organizacao);
     if (!user) return response.status(HttpStatus.NOT_FOUND).json({ message: 'Usuaário inválido ou inexistente.' })
     try {
       await this.usuarioService.update(+id, updateUsuarioDto);
@@ -129,7 +133,7 @@ export class UsuarioController {
     }
   }
 
-  @UseGuards(AuthGuard)
+ // @UseGuards(AuthGuard)
   @Delete(':id')
   async remove(
       @Res() response: Response,
@@ -146,6 +150,37 @@ export class UsuarioController {
     }catch (erro) {
       console.log(erro);
       return response.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ message: 'Erro interno de servidor', erro });
+    }
+  }
+  // @UseGuards(AuthGuard)
+  @Post('empresas')
+  async insertUserInCompany(
+    @Res() response: Response,
+    @Body() user_store: { organizacao: number, usuario_empresa: { id_usuario: number, id_empresa: number }[] },
+  ) {
+    try {
+      const organization = user_store.organizacao;
+      const validOrg =
+        await this.usuarioService.validateOrganization(organization);
+      if (!validOrg) {
+        return response
+          .status(HttpStatus.BAD_REQUEST)
+          .json({ message: 'Organização inválida ou inexistente.' });
+      }
+      for (const empresa of user_store.usuario_empresa ){
+        const empresaAtualNaOrg = await this.companyService.findOneCompanyForUpdate(organization, empresa.id_empresa);
+        if (!empresaAtualNaOrg) return response.status(HttpStatus.BAD_REQUEST).json({ message: 'Uma ou mais empresas informadas não são válidas para esta organização.' })
+      }
+      await this.usuarioService.addUserCompany(user_store.usuario_empresa);
+      return response
+        .status(HttpStatus.CREATED)
+        .json({ message: 'Registros inseridos com sucesso.' });
+    } catch (erro) {
+      console.log(erro);
+      return response.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
+        message: 'Erro interno de servidor',
+        erro,
+      });
     }
   }
 }

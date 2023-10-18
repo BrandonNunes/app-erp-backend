@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
 import { Users } from '../usuario/entities/usuario.entity';
-import { OrganizationModel } from '../business/entities/organizacao.entity';
+import { OrganizationModel } from '../business/entities/organization.entity';
 
 @Injectable()
 export class AuthService {
@@ -25,7 +25,7 @@ export class AuthService {
     }
     return this.usersModel.findOne({
       raw: true,
-      where: { email, idOrganizacao: organizacao },
+      where: { email, id_organizacao: organizacao },
     });
   }
   searchUsersByCpfCnpj(cpf_cnpj: string, organizacao?: number) {
@@ -34,7 +34,7 @@ export class AuthService {
     }
     return this.usersModel.findOne({
       raw: true,
-      where: { cpf_cnpj, idOrganizacao: organizacao },
+      where: { cpf_cnpj, id_organizacao: organizacao },
     });
   }
 

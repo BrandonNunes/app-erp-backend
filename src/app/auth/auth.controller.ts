@@ -3,7 +3,7 @@ import { AuthService } from './auth.service';
 import { Response } from 'express';
 import { Users } from '../usuario/entities/usuario.entity';
 import { JwtService } from '@nestjs/jwt';
-import { OrganizationModel } from '../business/entities/organizacao.entity';
+import { OrganizationModel } from '../business/entities/organization.entity';
 import { jwtConstants } from './constants';
 import { Sequelize } from 'sequelize-typescript';
 import {compareSync} from "bcrypt";
@@ -39,7 +39,7 @@ export class AuthController {
     const payload = {
       sub: userData.id,
       nome: userData.nome,
-      organizacao: userData.idOrganizacao,
+      organizacao: userData.id_organizacao,
       master: userData.usuario_master,
       super_user: userData.super_usuario
     };
@@ -135,7 +135,7 @@ export class AuthController {
       const listOrgByUser: OrganizationModel[] = [];
       (users as Users[]).forEach((user, index) => {
         const orgUser = listOrganizations.find(
-          (org) => org.id === user.idOrganizacao,
+          (org) => org.id === user.id_organizacao,
         );
         if (orgUser) {
           listOrgByUser.push(orgUser);

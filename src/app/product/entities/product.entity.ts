@@ -1,17 +1,19 @@
 import {
-    BelongsTo,
-    BelongsToMany,
-    Column,
-    CreatedAt,
-    DataType,
-    ForeignKey,
-    HasMany,
-    Model,
-    Table, UpdatedAt
+  BeforeCreate,
+  BelongsTo,
+  BelongsToMany,
+  Column,
+  CreatedAt,
+  DataType,
+  ForeignKey,
+  HasMany,
+  Model,
+  Table, UpdatedAt
 } from 'sequelize-typescript';
 import {EmpresaModel} from "../../business/entities/company.entity";
-import {OrganizationModel} from "../../business/entities/organizacao.entity";
+import {OrganizationModel} from "../../business/entities/organization.entity";
 import {GrupoProdutoModel} from "./grupoProduto.entity";
+import {v4 as uuidv4} from "uuid";
 
 
 @Table({ tableName: 'produtos' })
@@ -63,6 +65,10 @@ export class ProductModel extends Model {
 
     // @BelongsTo(() => EmpresaModel, )
     // empresa: EmpresaModel;
+  @BeforeCreate
+  static autoUUID(product: ProductModel) {
+    product.guid = uuidv4();
+  }
 
 
 }

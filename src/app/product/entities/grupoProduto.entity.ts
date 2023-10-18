@@ -10,7 +10,7 @@ import {
     Table, UpdatedAt
 } from 'sequelize-typescript';
 import {EmpresaModel} from "../../business/entities/company.entity";
-import {OrganizationModel} from "../../business/entities/organizacao.entity";
+import {OrganizationModel} from "../../business/entities/organization.entity";
 
 
 @Table({ tableName: 'grupo_produtos' })
@@ -28,6 +28,9 @@ export class GrupoProdutoModel extends Model {
 
     @Column({ defaultValue: true })
     ativo: boolean;
+
+    // @Column({defaultValue: false})
+    // privado: boolean;
 
     @CreatedAt
     createdAt: Date

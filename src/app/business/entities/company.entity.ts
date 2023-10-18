@@ -1,38 +1,68 @@
-import {BeforeCreate, BelongsTo, BelongsToMany, Column, DataType, ForeignKey, Model, Table} from 'sequelize-typescript';
+import {
+  BeforeCreate,
+  BelongsTo,
+  BelongsToMany,
+  Column,
+  CreatedAt,
+  DataType,
+  ForeignKey,
+  Model,
+  Table, UpdatedAt
+} from 'sequelize-typescript';
 import { Users } from '../../usuario/entities/usuario.entity';
 import { UsuarioEmpresaModel } from '../../usuario/entities/usuario_empresa.entity';
 import { v4 as uuidv4 } from 'uuid';
-import {OrganizationModel} from "./organizacao.entity";
+import {OrganizationModel} from "./organization.entity";
 
-@Table({ tableName: 'empresas', timestamps: false })
+@Table({ tableName: 'empresas' })
 export class EmpresaModel extends Model {
-  @Column({ primaryKey: true, autoIncrement: true, type: DataType.INTEGER, field: 'empresa', defaultValue: 0 })
-  empresa: number;
+
+  @Column({ primaryKey: true, autoIncrement: true, type: DataType.INTEGER })
+  id: number;
+
   @ForeignKey(() => OrganizationModel)
   @Column
-  idOrganizacao: number;
+  id_organizacao: number;
+
   @Column
   razao_social: string;
+
   @Column
-  cnpj_cpf: string;
-  @Column({defaultValue: 'ATIVO'})
-  situacao: string;
+  cpf_cnpj: string;
+
+  @Column({defaultValue: true})
+  ativo: boolean;
+
   @Column
   email: string;
-  @Column
+
+  @Column({ allowNull: true ,defaultValue: null })
   nome_fantasia: string;
 
-  @Column
+  @Column({ allowNull: true ,defaultValue: null })
+  cep: string;
+
+  @Column({ allowNull: true ,defaultValue: null })
   cidade: number;
 
-  @Column
+  @Column({ allowNull: true ,defaultValue: null })
   bairro: number;
 
-  @Column
+  @Column({ allowNull: true ,defaultValue: null })
+  logradouro: string
+
+  @Column({ allowNull: true ,defaultValue: null })
+  numero: number
+
+  @Column({ allowNull: true ,defaultValue: null })
   guid: string;
 
-  // @Column({type: DataType.TIME})
-  // RowVersion: any
+  @CreatedAt
+  createdAt: Date
+
+  @UpdatedAt
+  updatedAt: Date
+
 
   @BelongsToMany(() => Users, () => UsuarioEmpresaModel)
   usuarios: Users[];

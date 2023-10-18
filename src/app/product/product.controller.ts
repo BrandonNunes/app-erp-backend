@@ -3,12 +3,13 @@ import { ProductService } from './product.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import {Response} from "express";
+import {CreateGroupProductDto} from "./dto/create-group-product.dto";
 
-@Controller('produtos')
+@Controller()
 export class ProductController {
   constructor(private readonly productService: ProductService) {}
 
-  @Post()
+  @Post('produtos')
   async createProduct(@Res() response: Response, @Body() newProdData: CreateProductDto) {
     try {
       await this.productService.createNewProduct(newProdData);
@@ -19,7 +20,7 @@ export class ProductController {
     }
   }
 
-  @Get()
+  @Get('produtos')
   async findAllProduct(@Res() response: Response, @Query() params: { empresa: string }) {
     try{
       const prods = await this.productService.findAllProducts(params.empresa);
@@ -30,7 +31,7 @@ export class ProductController {
     }
   }
 
-  @Get(':id')
+  @Get('produtos/:id')
   async findOneProduct(@Res() response: Response, @Param('id') id: string) {
     try {
       const prod = await this.productService.findOneProduct(+id);
@@ -43,7 +44,7 @@ export class ProductController {
     }
   }
 
-  @Put(':id')
+  @Put('produtos/:id')
   async updateProduct(@Res() response: Response, @Param('id') id: string, @Body() newProdData: UpdateProductDto) {
     const existOrg = await this.productService.findOneProduct(+id);
     if (!existOrg) return response.status(404).json({message: 'Produto inválida.'})
@@ -56,7 +57,7 @@ export class ProductController {
     }
   }
 
-  @Delete(':id')
+  @Delete('produtos:id')
   async removeProduct(@Res() response: Response, @Param('id') id: string) {
     const existOrg = await this.productService.findOneProduct(+id);
     if (!existOrg) return response.status(404).json({message: 'Produto inválido.'});
@@ -66,6 +67,33 @@ export class ProductController {
     }catch (erro) {
       console.log(erro);
       return response.status(HttpStatus.INTERNAL_SERVER_ERROR).json({message: 'Erro interno de servidor.', erro})
+    }
+  }
+
+  //Grupo de Produto
+  @Post('grupo-produto')
+  async createGroupProduct(@Res() response: Response, @Body() newGroupData: CreateGroupProductDto) {
+    try {
+      const newGroup = await this.productService.createNewGroupProduct(newGroupData);
+      return response.status(HttpStatus.CREATED).json({
+        message: 'Registro gravado com sucesso.',
+        grupo: {
+          ...newGroup.dataValues
+        }
+      });
+    }catch (erro) {
+      console.log(erro);
+      return response.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ message: 'Erro interno de servidor.', erro })
+    }
+  }
+  @Get('grupo-produto')
+  async findAllGroupProduct(@Res() response: Response, @Query() params: { empresa: string }) {
+    try{
+      const groups = await this.productService.findAllGroupsProducts(params.empresa);
+      return response.status(HttpStatus.OK).json(groups);
+    }catch (erro) {
+      console.log(erro);
+      return response.status(HttpStatus.INTERNAL_SERVER_ERROR).json({message: 'Erro interno de servidor.', erro});
     }
   }
 }
