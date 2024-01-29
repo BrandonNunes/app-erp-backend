@@ -2,19 +2,20 @@ import { Injectable } from '@nestjs/common';
 import { CreateUsuarioDto } from './dto/create-usuario.dto';
 import { UpdateUsuarioDto } from './dto/update-usuario.dto';
 import { InjectModel } from '@nestjs/sequelize';
-import { Users } from './entities/usuario.entity';
-import { OrganizationModel } from '../business/entities/organization.entity';
 import { Op, Optional } from 'sequelize';
 import { QueryParamsUsesTypes } from './usuario.controller';
-import { EmpresaModel } from '../business/entities/company.entity';
-import {UsuarioEmpresaModel} from "./entities/usuario_empresa.entity";
+import {UsuarioLojaModel} from "./entities/usuario_loja.entity";
+import {UsuarioModel} from "./entities/usuario.entity";
+import {OrganizacaoModel} from "../organizacao/entities/organizacao.entity";
+import {LojaModel} from "../loja/entities/loja.entity";
 
 @Injectable()
 export class UsuarioService {
   constructor(
-    @InjectModel(Users) private usersModel: typeof Users,
-    @InjectModel(OrganizationModel) private organization: typeof OrganizationModel,
-    @InjectModel(UsuarioEmpresaModel) private usuarioEmpresaModel: typeof UsuarioEmpresaModel,
+    @InjectModel(UsuarioModel) private usuarioModel: typeof UsuarioModel,
+    @InjectModel(OrganizacaoModel) private organization: typeof OrganizacaoModel,
+    @InjectModel(UsuarioLojaModel) private usuarioLojaModel: typeof UsuarioLojaModel,
+    @InjectModel(LojaModel) private lojaModel: typeof LojaModel
   ) {}
 
   async validateOrganization(id: number) {
@@ -27,7 +28,7 @@ export class UsuarioService {
   }
 
   async createUser(createUsuarioDto: CreateUsuarioDto) {
-    return this.usersModel.create(
+    return this.usuarioModel.create(
       createUsuarioDto as unknown as Optional<
         CreateUsuarioDto,
         keyof CreateUsuarioDto
@@ -37,7 +38,7 @@ export class UsuarioService {
 
   getUsers(queryParams: QueryParamsUsesTypes) {
     if (queryParams.id) {
-      return this.usersModel.findOne({
+      return this.usuarioModel.findOne({
         where: {
           id_organizacao: queryParams.organizacao,
           [Op.and]: {
@@ -48,42 +49,42 @@ export class UsuarioService {
         attributes: { exclude: ['senha'] },
         include: [
           {
-            model: EmpresaModel,
+            model: LojaModel,
             attributes: {
-              exclude: ['id_organizacao', 'razao_social', 'cnpj_cpf', 'email'],
+              exclude: ['id_organizacao', 'razao_social', 'email'],
             },
           },
         ],
       });
     }
-    return this.usersModel.findAll({
+    return this.usuarioModel.findAll({
       where: {
         id_organizacao: queryParams.organizacao,
-        [Op.and]: {
-          ativo: queryParams.ativo ? queryParams.ativo : true,
-        },
+        // [Op.and]: {
+        //   ativo: queryParams.ativo ? queryParams.ativo : true,
+        // },
       },
       attributes: {exclude: ['senha']},
-      include: [
-        {
-          model: EmpresaModel,
-          attributes: {
-            exclude: ['id_organizacao', 'razao_social', 'cnpj_cpf', 'email'],
-          },
-        },
-      ],
+      // include: [
+      //   {
+      //     model: LojaModel,
+      //     attributes: {
+      //       exclude: ['id_organizacao', 'razao_social', 'email'],
+      //     },
+      //   },
+      // ],
     });
   }
 
   findOne(id: number, organizacao: number) {
-    return this.usersModel.findOne({
+    return this.usuarioModel.findOne({
       where: { id, [Op.and]: { id_organizacao: organizacao } },
       attributes: { exclude: ['senha'] },
       include: [
         {
-          model: EmpresaModel,
+          model: LojaModel,
           attributes: {
-            exclude: ['id_organizacao', 'razao_social', 'cnpj_cpf', 'email'],
+            exclude: ['id_organizacao', 'razao_social', 'email'],
           },
         },
       ],
@@ -91,15 +92,15 @@ export class UsuarioService {
   }
 
   update(id: number, updateUsuarioDto: UpdateUsuarioDto) {
-    return this.usersModel.update(updateUsuarioDto, { where: { id } });
+    return this.usuarioModel.update(updateUsuarioDto, { where: { id } });
   }
 
   remove(id: number, organizacao: number) {
-    return this.usersModel.destroy({where: { id, [Op.and]: { id_organizacao: organizacao } } });
+    return this.usuarioModel.destroy({where: { id, [Op.and]: { id_organizacao: organizacao } } });
   }
 
-  async addUserCompany(listEmpresaUsuario: { id_usuario: number, id_empresa: number }[]) {
-    return this.usuarioEmpresaModel.bulkCreate(
+  async addUserCompany(listEmpresaUsuario: { id_usuario: string, id_loja: string }[]) {
+    return this.usuarioLojaModel.bulkCreate(
       [
         ...listEmpresaUsuario
       ],

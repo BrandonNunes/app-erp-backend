@@ -1,54 +1,42 @@
-import { IsEmail, IsNotEmpty, IsNumber, IsString } from 'class-validator';
+import {IsBoolean, IsEmail, IsNotEmpty, IsNumber, IsOptional, IsString, MaxLength, MinLength} from 'class-validator';
 
 export class CreateClientDto {
-  @IsNotEmpty()
-  @IsNumber()
-  cliente: number;
-  @IsNotEmpty()
+
+  @IsNotEmpty({message: 'Nome deve ser informado.'})
+  @MinLength(5, {message: 'Nome inválido.'})
   nome: string;
-  @IsNotEmpty()
-  razao_social: string;
-  @IsNotEmpty()
-  cpf_cnpj: string;
-  @IsNotEmpty()
-  rg_ie: string;
-  @IsNotEmpty()
-  @IsNumber()
-  segmento: number;
-  @IsNotEmpty()
+
+  @IsOptional()
+  @IsBoolean()
+  ativo: boolean
+
+  @IsNotEmpty({message: 'CPF deve ser informado.'})
+  cpf: string;
+
+  @IsNotEmpty({message: 'Cliente deve ser atribuido a uma loja.'})
+  id_loja: string;
+
+  @IsOptional()
+  @MaxLength(13, {message: 'telefone excede o tamho maximo'})
+  telefone: string;
+
+  @IsOptional()
+  data_nascimento: Date;
+  @IsNotEmpty({message: 'CEP deve ser informado.'})
+  @MaxLength(8, { message: 'CEP excede o tamanho máximo.' })
   cep: string;
-  @IsNotEmpty()
-  @IsString()
-  tipo_logradouro: string;
-  @IsNotEmpty()
-  endereco: string; // Nome da rua
-  @IsNotEmpty()
-  logradouro?: string; // Numero da casa
-  @IsString()
-  complemento?: string;
-  @IsNotEmpty()
-  @IsNumber()
-  bairro: number;
-  @IsNotEmpty()
-  @IsNumber()
-  cidade: number;
-  @IsNotEmpty()
-  fone_ddd1?: string;
-  @IsNotEmpty()
-  telefone1?: string;
-  @IsNotEmpty()
-  situacao: string;
-  @IsNotEmpty()
-  uf: string;
-  @IsNotEmpty()
-  datacadastro: string;
-  @IsNotEmpty()
-  @IsEmail()
-  email: string;
-  @IsNotEmpty()
-  CodigoExterno: string;
-  @IsString()
-  orgao_expeditor: number | null;
-  @IsString()
-  data_nascimento: string | null;
+  @IsNotEmpty({message: 'Estado deve ser informado.'})
+  estado: string;
+  @IsNotEmpty({message: 'Cidade deve ser informado.'})
+  cidade: string;
+  @IsNotEmpty({message: 'Bairro deve ser informado.'})
+  bairro: string;
+  @IsNotEmpty({message: 'Rua deve ser informado.'})
+  rua: string;
+  @IsOptional()
+  numero: string;
+  @IsOptional()
+  @MaxLength(100, {message: 'Limite máximo para o campo complemento excedido(100).'})
+  complemento: string;
+
 }

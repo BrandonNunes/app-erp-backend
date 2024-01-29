@@ -19,7 +19,8 @@ import { UpdateUsuarioDto } from './dto/update-usuario.dto';
 // import { compareSync } from 'bcrypt';
 import { AuthGuard } from '../auth/auth.guard';
 import { Sequelize } from 'sequelize-typescript';
-import {BusinessService} from "../business/business.service";
+import {LojaService} from "../loja/loja.service";
+import {ApiQuery, ApiTags} from "@nestjs/swagger";
 
 export type QueryParamsUsesTypes = {
   empresa: string;
@@ -28,11 +29,12 @@ export type QueryParamsUsesTypes = {
   organizacao: string;
 };
 
+@ApiTags('Usuarios')
 @Controller('usuarios')
 export class UsuarioController {
   constructor(
     private readonly usuarioService: UsuarioService,
-    private companyService: BusinessService,
+    private lojaService: LojaService,
     private sequelize: Sequelize,
   ) {}
 
@@ -83,6 +85,7 @@ export class UsuarioController {
 
   // OBTER USUARIOS
   // @UseGuards(AuthGuard)
+  @ApiQuery({required: true, name: 'organizacao'})
   @Get()
   async findUsers(
     @Res() response: Response,
@@ -95,6 +98,8 @@ export class UsuarioController {
     }
     try {
       const users = await this.usuarioService.getUsers(queryParams);
+     // const users = await this.sequelize.query(`
+     // select * from usuarios`)
       return response.json(users);
     } catch (erro) {
       console.log(erro);
@@ -153,10 +158,10 @@ export class UsuarioController {
     }
   }
   // @UseGuards(AuthGuard)
-  @Post('empresas')
+  @Post('loja')
   async insertUserInCompany(
     @Res() response: Response,
-    @Body() user_store: { organizacao: number, usuario_empresa: { id_usuario: number, id_empresa: number }[] },
+    @Body() user_store: { organizacao: number, usuario_loja: { id_usuario: string, id_loja: string }[] },
   ) {
     try {
       const organization = user_store.organizacao;
@@ -167,11 +172,11 @@ export class UsuarioController {
           .status(HttpStatus.BAD_REQUEST)
           .json({ message: 'Organização inválida ou inexistente.' });
       }
-      for (const empresa of user_store.usuario_empresa ){
-        const empresaAtualNaOrg = await this.companyService.findOneCompanyForUpdate(organization, empresa.id_empresa);
+      for (const empresa of user_store.usuario_loja ){
+        const empresaAtualNaOrg = await this.lojaService.findOneLojaForUpdate(organization, empresa.id_loja);
         if (!empresaAtualNaOrg) return response.status(HttpStatus.BAD_REQUEST).json({ message: 'Uma ou mais empresas informadas não são válidas para esta organização.' })
       }
-      await this.usuarioService.addUserCompany(user_store.usuario_empresa);
+      await this.usuarioService.addUserCompany(user_store.usuario_loja);
       return response
         .status(HttpStatus.CREATED)
         .json({ message: 'Registros inseridos com sucesso.' });

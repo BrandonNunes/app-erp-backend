@@ -17,31 +17,49 @@ import { CreateClientDto } from './dto/create-client.dto';
 import { UpdateClientDto } from './dto/update-client.dto';
 import { Response } from 'express';
 import { AuthGuard } from '../auth/auth.guard';
+import ValidateUtils from "../utils/validateUtils";
+import {LojaService} from "../loja/loja.service";
 
 export type QueryParamsClientTypes = {
-  empresa: string;
+  loja: string;
   id?: string;
-  situacao: string;
+  ativo: string;
 };
 @Controller('clientes')
 export class ClientController {
-  constructor(private readonly clientService: ClientService) {}
+  constructor(
+      private readonly clientService: ClientService,
+      private readonly validUtils: ValidateUtils,
+      private readonly lojaService: LojaService
+              ) {}
 
   @Post()
-  create(@Body() createClientDto: CreateClientDto) {
-    return this.clientService.create(createClientDto);
+  async create(@Res() response: Response, @Body() createClientDto: CreateClientDto) {
+    try{
+      const validCPF = this.validUtils.validarCPF(createClientDto.cpf);
+      if (!validCPF) return response.status(HttpStatus.BAD_REQUEST).json({message: 'CPF inválido.'});
+      const validStore = this.lojaService.findOne(createClientDto.id_loja);
+      if (!validStore) return response.status(HttpStatus.BAD_REQUEST).json({message: 'Loja informada inválida.'});
+      const existClientOnStore = await this.clientService.findOneClientOnStore(createClientDto.id_loja, createClientDto.cpf);
+      if (existClientOnStore) return response.status(HttpStatus.CONFLICT).json({message: 'Cliente já possui cadastro nesta loja.'})
+      const newClient = await this.clientService.create(createClientDto);
+      return response.status(HttpStatus.CREATED).json({message: 'Registro criado com sucesso!', cliente: {...newClient.dataValues}})
+    }catch (erro) {
+      console.log(erro);
+      return response.status(HttpStatus.INTERNAL_SERVER_ERROR).json({message: 'Erro interno de servidor.', erro})
+    }
   }
 
-  @UseGuards(AuthGuard)
+ // @UseGuards(AuthGuard)
   @Get()
   async findAll(
     @Res() response: Response,
     @Query() queryParams: QueryParamsClientTypes,
   ) {
     // console.log(queryParams);
-    if (!queryParams.empresa) {
+    if (!queryParams.loja) {
       return response.status(HttpStatus.BAD_REQUEST).json({
-        message: 'O parametro [empresa] deve ser informado.',
+        message: 'O parametro [loja] deve ser informado.',
       });
     }
     try {
@@ -80,8 +98,18 @@ export class ClientController {
   // }
 
   @Put(':id')
-  update(@Param('id') id: string, @Body() updateClientDto: UpdateClientDto) {
-    return this.clientService.update(+id, updateClientDto);
+  async update(@Res() response: Response, @Param('id') id: string, @Body() updateClientDto: UpdateClientDto) {
+    const existClient = await this.clientService.findOne(id);
+    if (!existClient) return response.status(404).json({message: 'Cliente inválido.'})
+    try {
+      await this.clientService.update(id, updateClientDto);
+      return response.status(HttpStatus.ACCEPTED).json({
+        message: 'Registro atualizado com sucesso.',
+      });
+    } catch (erro) {
+      console.log(erro);
+      return response.status(HttpStatus.INTERNAL_SERVER_ERROR).json({message: 'Erro interno de servidor.', erro})
+    }
   }
 
   @Delete(':id')

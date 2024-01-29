@@ -6,14 +6,14 @@ import { JwtModule, JwtService } from '@nestjs/jwt';
 import { UsuarioModule } from '../usuario/usuario.module';
 import { UsuarioService } from '../usuario/usuario.service';
 import { SequelizeModule } from '@nestjs/sequelize';
-import { Users } from '../usuario/entities/usuario.entity';
-import { OrganizationModel } from '../business/entities/organization.entity';
-import { EmpresaModel } from '../business/entities/company.entity';
-import {UsuarioEmpresaModel} from "../usuario/entities/usuario_empresa.entity";
+import {UsuarioModel} from "../usuario/entities/usuario.entity";
+import {OrganizacaoModel} from "../organizacao/entities/organizacao.entity";
+import {LojaModel} from "../loja/entities/loja.entity";
+import {UsuarioLojaModel} from "../usuario/entities/usuario_loja.entity";
 
 @Module({
   imports: [
-    SequelizeModule.forFeature([Users, OrganizationModel, EmpresaModel, UsuarioEmpresaModel]),
+    SequelizeModule.forFeature([UsuarioModel, OrganizacaoModel, LojaModel, UsuarioLojaModel]),
     UsuarioModule,
     JwtModule.register({
       global: true,
