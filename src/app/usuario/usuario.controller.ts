@@ -16,12 +16,14 @@ import { Response } from 'express';
 import { UsuarioService } from './usuario.service';
 import { CreateUsuarioDto } from './dto/create-usuario.dto';
 import { UpdateUsuarioDto } from './dto/update-usuario.dto';
+import {Table, Request, VarChar, Int, DateTime, Char, Bit, ConnectionPool} from 'mssql'
 // import { compareSync } from 'bcrypt';
 import { AuthGuard } from '../auth/auth.guard';
 import {DataType, Sequelize} from 'sequelize-typescript';
 import {LojaService} from "../loja/loja.service";
 import {ApiQuery, ApiTags} from "@nestjs/swagger";
 import {DataTypes, QueryTypes} from "sequelize";
+import * as process from "process";
 
 export type QueryParamsUsesTypes = {
   empresa: string;
@@ -33,11 +35,29 @@ export type QueryParamsUsesTypes = {
 @ApiTags('Usuarios')
 @Controller('usuarios')
 export class UsuarioController {
+  pool = new ConnectionPool({
+    user: process.env.DATABASE_USER,
+    password: process.env.DATABASE_PASS,
+    server: process.env.DATABASE_HOST,
+    database: process.env.DATABASE_NAME,
+    options: {
+      trustServerCertificate: true
+    }
+
+  })
+  // @ts-ignore
   constructor(
     private readonly usuarioService: UsuarioService,
     private lojaService: LojaService,
     private sequelize: Sequelize,
-  ) {}
+  ) {
+
+    this.pool.connect((err) => {
+      if (err) {
+        console.log(err);
+      }
+    })
+  }
 
   // CRIAR NOVO USUARIO
   // @UseGuards(AuthGuard)
@@ -55,85 +75,46 @@ export class UsuarioController {
           .status(HttpStatus.BAD_REQUEST)
           .json({ message: 'Organização inválida ou inexistente.' });
       }
-      /** USANDO FUNÇÃO DO BANCO PARA GERAR SENHA ENCRIPTADA
-       *  Não segura, dificulta uma possível migração de DB,
-       *  Possível incompatibilidade com versões mais recentes do SQLServer no futuro,
-       *  Um dia havendo troca de estrategia:
-       *   - desabilitar chamada ao banco abaixo e habilitar metodo de hash dentro do models de usuarios(bcrypt);
-       * */
-      /*----------------inicio---------------------------*/
-      // const convertPass: any = await this.sequelize.query(
-      //   `SELECT CONVERT(VARBINARY(100), pwdEncrypt(${createUsuarioDto.senha}))`,
-      //   { raw: true },
-      // );
-      // createUsuarioDto.senha = convertPass[0][0][''];
-      /*-----------------fim--------------------------*/
-     // return response.json(createUsuarioDto);
-    //  const newUser = await this.usuarioService.createUser(createUsuarioDto);
-      // Definição do modelo para a tabela temporária
-      const defineTypesList = {
-        id: {type: DataType.INTEGER, primaryKey: true},
-        usuario: DataType.STRING(50),
-        email: DataType.STRING(1000),
-        cpf_cnpj: DataType.STRING(14),
-        rg_ie: DataType.STRING(20),
-        orgao_expeditor: DataType.INTEGER,
-        data_nascimento: DataType.DATE,
-        cep: DataType.STRING(8),
-        tipo_logradouro: DataType.STRING(10),
-        endereco: DataType.STRING(100),
-        logradouro: DataType.STRING(15),
-        complemento: DataType.STRING(100),
-        bairro: DataType.STRING(50),
-        cidade: DataType.INTEGER,
-        uf: DataType.CHAR(2),
-        tema: DataType.INTEGER,
-        ativo: DataType.BOOLEAN,
-        grupos: DataType.STRING(50),
-        fone_ddd: DataType.STRING(2),
-        telefone: DataType.STRING(15),
-        CodigoExterno: DataType.STRING(20),
-
-      }
-      // Object.keys(createUsuarioDto.list[0]).forEach((key) => {
-      //  // console.log(key)
-      //   if (String(key) == 'id') {
-      //     defineTypesList[key] = { type: DataTypes.STRING, primaryKey: true}
-      //   }else {
-      //     defineTypesList[key] = {type: DataTypes.STRING,}
-      //   }
-      // })
-
-     // // return response.json(defineTypesList)
-      const MinhaTabelaTemp = this.sequelize.define('MinhaTabelaTemp', {
-      ...defineTypesList
-      }, {
-        // Defina o nome da tabela para o tipo de tabela temporária
-        tableName: 'MinhaTabelaTemp',
-        timestamps: false,
-      });
-      await MinhaTabelaTemp.sync({force: true})
-      // Adicionar dados à tabela temporária
-      const dadosCriados = await MinhaTabelaTemp.bulkCreate([...createUsuarioDto.list as any]);
-      //const dataList = await this.sequelize.query('select * from MinhaTabelaTemp', {raw: true});
-
-      //return response.json(dadosCriados)
-      const newUser = await this.sequelize.query(`
-      EXEC sp_Api_Usuario_Inserir @organizacao = :Organizacao, @list = :List`, {
-        replacements: {
-          Organizacao: createUsuarioDto.organizacao,
-         List: [JSON.stringify(createUsuarioDto.list)]
-        },
-        type: QueryTypes.INSERT,
-       raw: false
-      });
-      return response.send(newUser);
-      // return response
-      //   .status(HttpStatus.CREATED)
-      //   .json({ message: 'Registro inserido com sucesso.', usuario: {
-      //       ...newUser.dataValues,
-      //       senha: undefined
-      //     } });
+      const tvp = new Table();
+      tvp.columns.add('idtype', Int())
+      tvp.columns.add('id', Int())
+      tvp.columns.add('usuario', VarChar(50))
+      tvp.columns.add('email', VarChar(100))
+      tvp.columns.add('cpf_cnpj', VarChar(14))
+      tvp.columns.add('rg_ie', VarChar(20))
+      tvp.columns.add('orgao_expeditor', Int())
+      tvp.columns.add('data_nascimento', DateTime())
+      tvp.columns.add('cep', VarChar(8))
+      tvp.columns.add('tipo_logradouro', VarChar(10))
+      tvp.columns.add('endereco', VarChar(100))
+      tvp.columns.add('logradouro', VarChar(15))
+      tvp.columns.add('complemento', VarChar(100))
+      tvp.columns.add('bairro', Int())
+      tvp.columns.add('cidade', Int())
+      tvp.columns.add('uf', Char(2))
+      tvp.columns.add('tema', Int())
+      tvp.columns.add('ativo', Bit())
+      tvp.columns.add('grupos', VarChar(50))
+      tvp.columns.add('fone_ddd', VarChar(2))
+      tvp.columns.add('telefone', VarChar(15))
+      tvp.columns.add('CodigoExterno', VarChar(20))
+      // add rows
+      createUsuarioDto.list = createUsuarioDto.list.map((item, index) =>( {idtype: index+1, ...item}))
+      createUsuarioDto.list.forEach((item, index) => {
+        tvp.rows.add(...Object.values(createUsuarioDto.list[index]))
+      })
+     // tvp.rows.add(...Object.values(createUsuarioDto.list[0]) as any)
+      const request = new Request(this.pool);
+      request.input('organizacao', createUsuarioDto.organizacao);
+      request.input('list', tvp);
+      const result = await request.execute('sp_Api_Usuario_Inserir');
+      const returnProcedure = result.recordset;
+      returnProcedure.forEach((resp, _, array) => {
+        if (resp.erro === "true" || resp.erro === true) {
+          return response.status(400).json(resp);
+        }
+      })
+      return response.status(201).json(returnProcedure);
     } catch (erro) {
       console.log(erro);
       return response.status(HttpStatus.INTERNAL_SERVER_ERROR).json({

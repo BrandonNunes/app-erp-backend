@@ -7,6 +7,7 @@ import {UsuarioModel} from "./entities/usuario.entity";
 import {OrganizacaoModel} from "../organizacao/entities/organizacao.entity";
 import {LojaModel} from "../loja/entities/loja.entity";
 import {LojaService} from "../loja/loja.service";
+import Sql from 'mssql'
 
 @Module({
   imports: [
