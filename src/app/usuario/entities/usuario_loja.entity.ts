@@ -1,14 +1,15 @@
 import { Column, ForeignKey, Model, Table } from 'sequelize-typescript';
-import { Users } from './usuario.entity';
-import { EmpresaModel } from '../../business/entities/company.entity';
+import {UsuarioModel} from "./usuario.entity";
+import {LojaModel} from "../../loja/entities/loja.entity";
 
-@Table({ tableName: 'usuarios_empresas', timestamps: false })
-export class UsuarioEmpresaModel extends Model {
-  @ForeignKey(() => Users)
+
+@Table({ tableName: 'usuarios_loja', timestamps: false })
+export class UsuarioLojaModel extends Model {
+  @ForeignKey(() => UsuarioModel)
   @Column
   id_usuario: number;
 
-  @ForeignKey(() => EmpresaModel)
+  @ForeignKey(() => LojaModel)
   @Column
-  id_empresa: number;
+  id_loja: number;
 }

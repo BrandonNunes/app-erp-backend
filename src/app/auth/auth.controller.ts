@@ -1,12 +1,12 @@
 import { Body, Controller, HttpStatus, Post, Res } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { Response } from 'express';
-import { Users } from '../usuario/entities/usuario.entity';
 import { JwtService } from '@nestjs/jwt';
-import { OrganizationModel } from '../business/entities/organization.entity';
 import { jwtConstants } from './constants';
 import { Sequelize } from 'sequelize-typescript';
 import {compareSync} from "bcrypt";
+import {UsuarioModel} from "../usuario/entities/usuario.entity";
+import {OrganizacaoModel} from "../organizacao/entities/organizacao.entity";
 
 const expiresInToken = 60; // EX: '30s', '5m', '2h' '7d'
 @Controller('auth')
@@ -18,17 +18,17 @@ export class AuthController {
   ) {}
 
   /** Função responsável por Validar as credenciais e gerar o JWT */
-  async autenticateUser(passSent: string, userData: Users, response: Response) {
-     const comparePass = compareSync(passSent, userData.senha)
-    // const comparePass: any = await this.sequelize.query(
-    //   `SELECT PWDCOMPARE('${passSent}', 0x${Buffer.from(
-    //     userData.senha,
-    //     'utf8',
-    //   ).toString('hex')}, 0)`,
-    //   { raw: true },
-    // );
-    // if (!!!comparePass[0][0]['']) {
-    if (!comparePass) {
+  async autenticateUser(passSent: string, userData: UsuarioModel, response: Response) {
+    // const comparePass = compareSync(passSent, userData.senha)
+    const comparePass: any = await this.sequelize.query(
+      `SELECT PWDCOMPARE('${passSent}', 0x${Buffer.from(
+        userData.senha,
+        'utf8',
+      ).toString('hex')}, 0)`,
+      { raw: true },
+    );
+    if (!!!comparePass[0][0]['']) {
+   // if (!comparePass) {
       // Senha incompatível
       console.log('error pass');
       return response
@@ -40,7 +40,7 @@ export class AuthController {
       sub: userData.id,
       nome: userData.nome,
       organizacao: userData.id_organizacao,
-      master: userData.usuario_master,
+    //  master: userData.usuario_master,
       super_user: userData.super_usuario
     };
     const tokenJWT = await this.jwtService.signAsync(payload, {
@@ -84,8 +84,8 @@ export class AuthController {
                 .status(HttpStatus.UNAUTHORIZED)
                 .json({ message: 'Falha na autenticação' });
             }
-            const userData = user as Users;
-            // Logoca para login
+            const userData = user as UsuarioModel;
+            // Logica para login
             return this.autenticateUser(body.senha, userData, response);
           }
         } else {
@@ -100,7 +100,7 @@ export class AuthController {
                 .json({ message: 'Falha na autenticação' });
             }
             /**Logica para login*/
-            const userData = user as Users;
+            const userData = user as UsuarioModel;
             return this.autenticateUser(body.senha, userData, response);
           }
           console.log('é cpfCnpj');
@@ -109,10 +109,10 @@ export class AuthController {
       // Caso não seja informado organização
       if (this.authService.validIsEmail(body.login)) {
         const users = await this.authService.searchUsersByEmail(body.login);
-        return this.validateNoOrg(body.senha, users as Users[], response);
+        return this.validateNoOrg(body.senha, users as UsuarioModel[], response);
       } else {
         const users = await this.authService.searchUsersByCpfCnpj(body.login);
-        return this.validateNoOrg(body.senha, users as Users[], response);
+        return this.validateNoOrg(body.senha, users as UsuarioModel[], response);
       }
 
       // return response.json({});
@@ -124,30 +124,30 @@ export class AuthController {
       });
     }
   }
-  async validateNoOrg(passSent: string, users: Users[], response: Response) {
-    if ((users as Users[]).length === 0) {
+  async validateNoOrg(passSent: string, users: UsuarioModel[], response: Response) {
+    if ((users as UsuarioModel[]).length === 0) {
       console.log('Nenhum usuario encontrado');
       return response
         .status(HttpStatus.UNAUTHORIZED)
         .json({ message: 'Falha na autenticação' });
-    } else if ((users as Users[]).length > 1) {
+    } else if ((users as UsuarioModel[]).length > 1) {
       const listOrganizations = await this.authService.getAllOrganizations();
-      const listOrgByUser: OrganizationModel[] = [];
-      (users as Users[]).forEach((user, index) => {
+      const listOrgByUser: OrganizacaoModel[] = [];
+      (users as UsuarioModel[]).forEach((user, index) => {
         const orgUser = listOrganizations.find(
           (org) => org.id === user.id_organizacao,
         );
         if (orgUser) {
           listOrgByUser.push(orgUser);
         }
-        if (index === (users as Users[]).length - 1) {
+        if (index === (users as UsuarioModel[]).length - 1) {
           return response.status(HttpStatus.CONFLICT).json({
             message: 'Usuário em mais de uma organização',
             organizacoes: listOrgByUser,
           });
         }
       });
-    } else if ((users as Users[]).length === 1) {
+    } else if ((users as UsuarioModel[]).length === 1) {
       /**Logica para login*/
       await this.autenticateUser(passSent, users[0], response);
     }

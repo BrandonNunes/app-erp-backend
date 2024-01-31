@@ -14,31 +14,23 @@ export class ClientService {
     private sequelize: Sequelize,
   ) {}
   create(createClientDto: CreateClientDto) {
-    return createClientDto;
+    return this.clienteModel.create({...createClientDto});
   }
 
   getClients(queryParams: QueryParamsClientTypes) {
     if (queryParams.id) {
       return this.clienteModel.findOne({
         where: {
-          empresa: queryParams.empresa,
-          [Op.and]: {
-            situacao: queryParams.situacao
-              ? queryParams.situacao.toUpperCase()
-              : 'ATIVO',
-            cliente: queryParams.id,
-          },
+          id_loja: queryParams.loja,
+          ativo: queryParams.ativo != undefined ? queryParams.ativo : true,
+          id: queryParams.id,
         },
       });
     }
     return this.clienteModel.findAll({
       where: {
-        empresa: queryParams.empresa,
-        [Op.and]: {
-          situacao: queryParams.situacao
-            ? queryParams.situacao.toUpperCase()
-            : 'ATIVO',
-        },
+        id_loja: queryParams.loja,
+        ativo: queryParams.ativo != undefined ? queryParams.ativo : true,
       },
     });
     // return this.clienteModel.findAll({attributes: ["nome", "cpf", "razao_social"],});
@@ -49,19 +41,20 @@ export class ClientService {
     // })
   }
 
-  findOne(id: string, empresa: string) {
-    return this.sequelize.query(
-      "EXEC sp_Api_Cliente_Obter @empresa=:empresa, @filtro='', @sequencial=:sequencial, @limite=1",
-      {
-        replacements: { empresa, sequencial: id },
-        type: QueryTypes.SELECT,
-        raw: true,
-      },
-    );
+  findOne(id: string) {
+    return this.clienteModel.findByPk(id)
+  }
+  findOneClientOnStore(loja: string, cpf: string) {
+    return this.clienteModel.findOne({
+      where: {
+        id_loja: loja,
+        cpf: cpf
+      }
+    })
   }
 
-  update(id: number, updateClientDto: UpdateClientDto) {
-    return updateClientDto;
+  update(id: string, updateClientDto: UpdateClientDto) {
+    return this.clienteModel.update({...updateClientDto}, {where: {id}});
   }
 
   remove(id: number) {

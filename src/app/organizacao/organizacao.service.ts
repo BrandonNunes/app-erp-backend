@@ -21,7 +21,7 @@ export class OrganizacaoService {
   }
 
   findOneOrg(id: number) {
-    return this.organizacaoModel.findByPk(id, {include: [LojaModel]});
+    return this.organizacaoModel.findByPk(id);
   }
 
   updateOrg(id: number, orgData: UpdateOrganizacaoDto) {

@@ -18,21 +18,24 @@ import { CreateUsuarioDto } from './dto/create-usuario.dto';
 import { UpdateUsuarioDto } from './dto/update-usuario.dto';
 // import { compareSync } from 'bcrypt';
 import { AuthGuard } from '../auth/auth.guard';
-import { Sequelize } from 'sequelize-typescript';
-import {BusinessService} from "../business/business.service";
+import {DataType, Sequelize} from 'sequelize-typescript';
+import {LojaService} from "../loja/loja.service";
+import {ApiQuery, ApiTags} from "@nestjs/swagger";
+import {DataTypes, QueryTypes} from "sequelize";
 
 export type QueryParamsUsesTypes = {
   empresa: string;
-  id?: string;
+  id?: number;
   ativo: boolean;
   organizacao: string;
 };
 
+@ApiTags('Usuarios')
 @Controller('usuarios')
 export class UsuarioController {
   constructor(
     private readonly usuarioService: UsuarioService,
-    private companyService: BusinessService,
+    private lojaService: LojaService,
     private sequelize: Sequelize,
   ) {}
 
@@ -44,7 +47,7 @@ export class UsuarioController {
     @Body() createUsuarioDto: CreateUsuarioDto,
   ) {
     try {
-      const organization = createUsuarioDto.id_organizacao;
+      const organization = createUsuarioDto.organizacao;
       const validOrg =
         await this.usuarioService.validateOrganization(organization);
       if (!validOrg) {
@@ -65,13 +68,72 @@ export class UsuarioController {
       // );
       // createUsuarioDto.senha = convertPass[0][0][''];
       /*-----------------fim--------------------------*/
-      const newUser = await this.usuarioService.createUser(createUsuarioDto);
-      return response
-        .status(HttpStatus.CREATED)
-        .json({ message: 'Registro inserido com sucesso.', usuario: {
-            ...newUser.dataValues,
-            senha: undefined
-          } });
+     // return response.json(createUsuarioDto);
+    //  const newUser = await this.usuarioService.createUser(createUsuarioDto);
+      // Definição do modelo para a tabela temporária
+      const defineTypesList = {
+        id: {type: DataType.INTEGER, primaryKey: true},
+        usuario: DataType.STRING(50),
+        email: DataType.STRING(1000),
+        cpf_cnpj: DataType.STRING(14),
+        rg_ie: DataType.STRING(20),
+        orgao_expeditor: DataType.INTEGER,
+        data_nascimento: DataType.DATE,
+        cep: DataType.STRING(8),
+        tipo_logradouro: DataType.STRING(10),
+        endereco: DataType.STRING(100),
+        logradouro: DataType.STRING(15),
+        complemento: DataType.STRING(100),
+        bairro: DataType.STRING(50),
+        cidade: DataType.INTEGER,
+        uf: DataType.CHAR(2),
+        tema: DataType.INTEGER,
+        ativo: DataType.BOOLEAN,
+        grupos: DataType.STRING(50),
+        fone_ddd: DataType.STRING(2),
+        telefone: DataType.STRING(15),
+        CodigoExterno: DataType.STRING(20),
+
+      }
+      // Object.keys(createUsuarioDto.list[0]).forEach((key) => {
+      //  // console.log(key)
+      //   if (String(key) == 'id') {
+      //     defineTypesList[key] = { type: DataTypes.STRING, primaryKey: true}
+      //   }else {
+      //     defineTypesList[key] = {type: DataTypes.STRING,}
+      //   }
+      // })
+
+     // // return response.json(defineTypesList)
+      const MinhaTabelaTemp = this.sequelize.define('MinhaTabelaTemp', {
+      ...defineTypesList
+      }, {
+        // Defina o nome da tabela para o tipo de tabela temporária
+        tableName: 'MinhaTabelaTemp',
+        timestamps: false,
+      });
+      await MinhaTabelaTemp.sync({force: true})
+      // Adicionar dados à tabela temporária
+      const dadosCriados = await MinhaTabelaTemp.bulkCreate([...createUsuarioDto.list as any]);
+      //const dataList = await this.sequelize.query('select * from MinhaTabelaTemp', {raw: true});
+
+      //return response.json(dadosCriados)
+      const newUser = await this.sequelize.query(`
+      EXEC sp_Api_Usuario_Inserir @organizacao = :Organizacao, @list = :List`, {
+        replacements: {
+          Organizacao: createUsuarioDto.organizacao,
+         List: [JSON.stringify(createUsuarioDto.list)]
+        },
+        type: QueryTypes.INSERT,
+       raw: false
+      });
+      return response.send(newUser);
+      // return response
+      //   .status(HttpStatus.CREATED)
+      //   .json({ message: 'Registro inserido com sucesso.', usuario: {
+      //       ...newUser.dataValues,
+      //       senha: undefined
+      //     } });
     } catch (erro) {
       console.log(erro);
       return response.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
@@ -83,6 +145,7 @@ export class UsuarioController {
 
   // OBTER USUARIOS
   // @UseGuards(AuthGuard)
+  @ApiQuery({required: true, name: 'organizacao'})
   @Get()
   async findUsers(
     @Res() response: Response,
@@ -95,6 +158,8 @@ export class UsuarioController {
     }
     try {
       const users = await this.usuarioService.getUsers(queryParams);
+     // const users = await this.sequelize.query(`
+     // select * from usuarios`)
       return response.json(users);
     } catch (erro) {
       console.log(erro);
@@ -117,7 +182,7 @@ export class UsuarioController {
         .status(HttpStatus.BAD_REQUEST)
         .json({ message: 'Usuário inválido' });
     }
-    const user = await this.usuarioService.findOne(+id, updateUsuarioDto.id_organizacao);
+    const user = await this.usuarioService.findOne(+id, updateUsuarioDto.organizacao);
     if (!user) return response.status(HttpStatus.NOT_FOUND).json({ message: 'Usuaário inválido ou inexistente.' })
     try {
       await this.usuarioService.update(+id, updateUsuarioDto);
@@ -153,10 +218,10 @@ export class UsuarioController {
     }
   }
   // @UseGuards(AuthGuard)
-  @Post('empresas')
+  @Post('loja')
   async insertUserInCompany(
     @Res() response: Response,
-    @Body() user_store: { organizacao: number, usuario_empresa: { id_usuario: number, id_empresa: number }[] },
+    @Body() user_store: { organizacao: number, usuario_loja: { id_usuario: string, id_loja: string }[] },
   ) {
     try {
       const organization = user_store.organizacao;
@@ -167,11 +232,11 @@ export class UsuarioController {
           .status(HttpStatus.BAD_REQUEST)
           .json({ message: 'Organização inválida ou inexistente.' });
       }
-      for (const empresa of user_store.usuario_empresa ){
-        const empresaAtualNaOrg = await this.companyService.findOneCompanyForUpdate(organization, empresa.id_empresa);
+      for (const empresa of user_store.usuario_loja ){
+        const empresaAtualNaOrg = await this.lojaService.findOneLojaForUpdate(organization, empresa.id_loja);
         if (!empresaAtualNaOrg) return response.status(HttpStatus.BAD_REQUEST).json({ message: 'Uma ou mais empresas informadas não são válidas para esta organização.' })
       }
-      await this.usuarioService.addUserCompany(user_store.usuario_empresa);
+      await this.usuarioService.addUserCompany(user_store.usuario_loja);
       return response
         .status(HttpStatus.CREATED)
         .json({ message: 'Registros inseridos com sucesso.' });

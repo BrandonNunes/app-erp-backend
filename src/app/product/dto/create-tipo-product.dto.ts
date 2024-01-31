@@ -1,34 +1,28 @@
 import {
 
     IsNotEmpty,
-    IsNumber,
+    IsNumber, IsOptional, MaxLength,
 } from 'class-validator';
+import {Column, ForeignKey} from "sequelize-typescript";
+import {OrganizacaoModel} from "../../organizacao/entities/organizacao.entity";
+import {LojaModel} from "../../loja/entities/loja.entity";
 
-export class CreateProductDto {
+export class CreateTipoProductDto {
 
-   @IsNotEmpty({ message: 'Um código de produto deve ser fornecido.' })
-   cod_produto: string;
-
-    @IsNotEmpty({ message: 'Uma empresa válida deve ser fornecida.' })
-    id_empresa: number;
-
-    @IsNotEmpty({ message: 'Uma descrição válida deve ser fornecida.' })
+    @IsNotEmpty({ message: 'Uma descrição deve ser informada.' })
+    @MaxLength(50, { message: 'Tamanho máximo para a descrição(50) foi excedido.' })
     descricao: string;
 
-    @IsNotEmpty({ message: 'Uma grupo válido deve ser fornecido.' })
-    @IsNumber()
-    id_grupo: number;
+    @IsNotEmpty({message: 'Uma organização válida deve ser informada.'})
+    id_organizacao:  number;
 
-    @IsNotEmpty({ message: 'Um valor mínimo deve ser fornecida.' })
-    @IsNumber()
-    valor_minimo: number;
+    @IsOptional()
+    id_loja: string;
 
-    @IsNotEmpty({ message: 'Um valor mínimo padrão ser fornecida.' })
-    @IsNumber()
-    valor_padrao: number;
+    @IsOptional()
+    ativo: boolean;
 
-    @IsNotEmpty({ message: 'Um valor máximo deve ser fornecida.' })
-    @IsNumber()
-    valor_maximo: number;
+    @IsOptional()
+    fixo: boolean
 
 }

@@ -5,19 +5,22 @@ import {
   BeforeCreate,
   BelongsToMany,
   CreatedAt,
-  UpdatedAt, ForeignKey
+  UpdatedAt, ForeignKey, DataType
 } from 'sequelize-typescript';
-import { EmpresaModel } from '../../business/entities/company.entity';
-import { UsuarioEmpresaModel } from './usuario_empresa.entity';
+import { UsuarioLojaModel } from './usuario_loja.entity';
 import { v4 as uuidv4 } from 'uuid';
 import {genSaltSync, hashSync} from "bcrypt";
-import {OrganizationModel} from "../../business/entities/organization.entity";
+import {LojaModel} from "../../loja/entities/loja.entity";
+import {OrganizacaoModel} from "../../organizacao/entities/organizacao.entity";
 
-@Table({ tableName: 'usuarios' })
-export class Users extends Model {
+@Table({ tableName: 'usuarios', timestamps: false })
+export class UsuarioModel extends Model {
   @Column({ primaryKey: true, autoIncrement: true })
   id: number;
-  @Column
+ // @ForeignKey(() => OrganizacaoModel)
+  @Column({field: 'idOrganizacao'})
+  id_organizacao: number;
+  @Column({field: 'usuario'})
   nome: string;
   @Column
   email: string;
@@ -25,6 +28,10 @@ export class Users extends Model {
   cpf_cnpj: string;
   @Column
   senha: string;
+  @Column
+  data_nascimento: string
+  @Column
+  telefone: string
   @Column({ defaultValue: true })
   ativo: boolean;
   @Column({ defaultValue: 'APP' })
@@ -36,41 +43,33 @@ export class Users extends Model {
   @Column({ defaultValue: false })
   usuario_master: boolean;
   @Column
-  tema: number;
-
-  @ForeignKey(() => OrganizationModel)
+  data_ultima_senha: string
   @Column
-  id_organizacao: number;
+  data_ultimo_logon: string;
   @Column
   guid: string;
   @Column
-  guid_foto?: string;
+  guid_foto: string;
 
-  @CreatedAt
-  createdAt: Date
+  // @CreatedAt
+  // createdAt: Date
+  //
+  // @UpdatedAt
+  // updatedAt: Date
+  //
+  // @BelongsToMany(() => LojaModel, () => UsuarioLojaModel)
+  // lojas: LojaModel[];
 
-  @UpdatedAt
-  updatedAt: Date
-
-  @BelongsToMany(() => EmpresaModel, () => UsuarioEmpresaModel)
-  empresas: EmpresaModel[];
-
-  @BeforeCreate
-  static hashPassword(user: Users) {
-      if (user.senha) {
-          const salt = genSaltSync(10);
-          user.senha = hashSync(user.senha, salt);
-      }
-  }
   // @BeforeCreate
-  // static autoLogon(user: Users) {
-  //   const fullName = user.usuario.split(' ')
-  //   let firstName = fullName[0];
-  //   let lastName = fullName[fullName.length-1];
-  //   user.logon = `${firstName}.${lastName}`.toUpperCase();
+  // static hashPassword(user: UsuarioModel) {
+  //     if (user.senha) {
+  //         const salt = genSaltSync(10);
+  //         user.senha = hashSync(user.senha, salt);
+  //     }
   // }
-  @BeforeCreate
-  static autoUUID(user: Users) {
-    user.guid = uuidv4();
-  }
+  // @BeforeCreate
+  // static autoUUID(user: UsuarioModel) {
+  //   user.id = uuidv4();
+  // }
+
 }

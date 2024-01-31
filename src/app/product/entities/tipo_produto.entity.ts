@@ -1,4 +1,5 @@
 import {
+    BeforeCreate,
     BelongsTo,
     BelongsToMany,
     Column, CreatedAt,
@@ -9,31 +10,43 @@ import {
     Model,
     Table, UpdatedAt
 } from 'sequelize-typescript';
+import { v4 as uuidV4 } from 'uuid'
 import {LojaModel} from "../../loja/entities/loja.entity";
+import {OrganizacaoModel} from "../../organizacao/entities/organizacao.entity";
 
-@Table({ tableName: 'produtos' })
-export class ProdutoModel extends Model {
+@Table({ tableName: 'tipo_produto' })
+export class TipoProdutoModel extends Model {
 
-    @Column({ primaryKey: true, autoIncrement: true })
-    id: number;
+    @Column({ primaryKey: true, type: DataType.INTEGER, autoIncrement: true })
+    id: string;
 
-    @Column({allowNull: false})
-    razao_social: string;
+    @Column
+    descricao: string;
 
-    @Column({allowNull: false})
-    nome_fantasia: string;
+    @ForeignKey(() => OrganizacaoModel)
+    @Column
+    id_organizacao:  number;
 
-    @Column({allowNull: true, defaultValue: null})
-    cpf_cnpj: string;
+    @ForeignKey(() => LojaModel)
+    @Column
+    id_loja: string;
 
-    @Column({allowNull: true, defaultValue: null})
-    logo: string;
+    @Column({defaultValue: true})
+    ativo: boolean;
+
+    @Column({defaultValue: false})
+    fixo: boolean;
 
     @CreatedAt
     createdAt: Date
 
     @UpdatedAt
     updatedAt: Date
+
+    // @BeforeCreate
+    // static autoUUID(tipoProd: TipoProdutoModel) {
+    //     tipoProd.id = uuidV4();
+    // }
 
 
 }

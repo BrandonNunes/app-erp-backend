@@ -5,7 +5,7 @@ import { CreateLojaDto } from './dto/create-loja.dto';
 import { UpdateLojaDto } from './dto/update-loja.dto';
 import ValidateUtils from "../utils/validateUtils";
 import {OrganizacaoService} from "../organizacao/organizacao.service";
-import {ApiTags} from "@nestjs/swagger";
+import {ApiQuery, ApiTags} from "@nestjs/swagger";
 
 export type QueryParamsBusiness = {
   organizacao: string;
@@ -48,9 +48,10 @@ export class LojaController {
     }
   }
 
+  @ApiQuery({required: true, name: 'organizacao'})
   @Get()
-  findAllStores() {
-    return this.lojaService.findAll();
+  findAllStores(@Query() queryParams: QueryParamsBusiness ) {
+    return this.lojaService.findAll(queryParams);
   }
 
   @Get(':id')
@@ -95,7 +96,7 @@ export class LojaController {
     try {
       const existStore = await this.lojaService.findOne(id);
       if (!existStore) return response.status(404).json({message: 'Loja inválida.'});
-      if (existStore.matrix) return response.status(HttpStatus.BAD_REQUEST).json({message: 'Ação não permitida para este tipo de loja.'})
+    //  if (existStore.matrix) return response.status(HttpStatus.BAD_REQUEST).json({message: 'Ação não permitida para este tipo de loja.'})
       await this.lojaService.remove(id);
       return response.status(HttpStatus.ACCEPTED).json({message: 'Registro removido com sucesso'})
     } catch (erro) {
