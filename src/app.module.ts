@@ -16,7 +16,7 @@ import {UsuarioLojaModel} from "./app/usuario/entities/usuario_loja.entity";
 import {ProdutoModel} from "./app/product/entities/produto.entity";
 import {ProductModule} from "./app/product/product.module";
 import {TipoProdutoModel} from "./app/product/entities/tipo_produto.entity";
-import * as process from "process";
+import {DatabaseService} from "./database/database.service";
 
 
 @Module({
@@ -60,6 +60,6 @@ import * as process from "process";
     OrganizacaoModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService, DatabaseService],
 })
 export class AppModule {}

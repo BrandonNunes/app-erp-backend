@@ -1,6 +1,5 @@
 import { Injectable } from '@nestjs/common';
 import { CreateUsuarioDto } from './dto/create-usuario.dto';
-import { UpdateUsuarioDto } from './dto/update-usuario.dto';
 import { InjectModel } from '@nestjs/sequelize';
 import { Op, Optional } from 'sequelize';
 import { QueryParamsUsesTypes } from './usuario.controller';
@@ -36,45 +35,45 @@ export class UsuarioService {
     );
   }
 
-  getUsers(queryParams: QueryParamsUsesTypes) {
-    if (queryParams.id) {
-      return this.usuarioModel.findOne({
-        where: {
-          idOrganizacao: queryParams.organizacao,
-          [Op.and]: {
-            ativo: queryParams.ativo ? queryParams.ativo : true,
-            id: queryParams.id,
-          },
-        },
-        attributes: { exclude: ['senha'] },
-        // include: [
-        //   {
-        //     model: LojaModel,
-        //     attributes: {
-        //       exclude: ['id_organizacao', 'razao_social', 'email'],
-        //     },
-        //   },
-        // ],
-      });
-    }
-    return this.usuarioModel.findAll({
-      where: {
-        idOrganizacao: queryParams.organizacao,
-        // [Op.and]: {
-        //   ativo: queryParams.ativo ? queryParams.ativo : true,
-        // },
-      },
-      attributes: {exclude: ['senha']},
-      // include: [
-      //   {
-      //     model: LojaModel,
-      //     attributes: {
-      //       exclude: ['id_organizacao', 'razao_social', 'email'],
-      //     },
-      //   },
-      // ],
-    });
-  }
+  // getUsers(queryParams: QueryParamsUsesTypes) {
+  //   if (queryParams.id) {
+  //     return this.usuarioModel.findOne({
+  //       where: {
+  //         idOrganizacao: queryParams.organizacao,
+  //         [Op.and]: {
+  //           ativo: queryParams.ativo ? queryParams.ativo : true,
+  //           id: queryParams.id,
+  //         },
+  //       },
+  //       attributes: { exclude: ['senha'] },
+  //       // include: [
+  //       //   {
+  //       //     model: LojaModel,
+  //       //     attributes: {
+  //       //       exclude: ['id_organizacao', 'razao_social', 'email'],
+  //       //     },
+  //       //   },
+  //       // ],
+  //     });
+  //   }
+  //   return this.usuarioModel.findAll({
+  //     where: {
+  //       idOrganizacao: queryParams.organizacao,
+  //       // [Op.and]: {
+  //       //   ativo: queryParams.ativo ? queryParams.ativo : true,
+  //       // },
+  //     },
+  //     attributes: {exclude: ['senha']},
+  //     // include: [
+  //     //   {
+  //     //     model: LojaModel,
+  //     //     attributes: {
+  //     //       exclude: ['id_organizacao', 'razao_social', 'email'],
+  //     //     },
+  //     //   },
+  //     // ],
+  //   });
+  // }
 
   findOne(id: number, organizacao: number) {
     return this.usuarioModel.findOne({
@@ -91,9 +90,7 @@ export class UsuarioService {
     });
   }
 
-  update(id: number, updateUsuarioDto: UpdateUsuarioDto) {
-    return this.usuarioModel.update(updateUsuarioDto, { where: { id } });
-  }
+
 
   remove(id: number, organizacao: number) {
     return this.usuarioModel.destroy({where: { id, [Op.and]: { id_organizacao: organizacao } } });

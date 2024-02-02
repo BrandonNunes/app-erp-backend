@@ -7,8 +7,11 @@ import { Sequelize } from 'sequelize-typescript';
 import {compareSync} from "bcrypt";
 import {UsuarioModel} from "../usuario/entities/usuario.entity";
 import {OrganizacaoModel} from "../organizacao/entities/organizacao.entity";
+import {ApiTags} from "@nestjs/swagger";
+import {LoginAuthDto} from "./dto/loginAuth.dto";
 
-const expiresInToken = 60; // EX: '30s', '5m', '2h' '7d'
+const expiresInToken = '1d'; // EX: '30s', '5m', '2h' '7d'
+@ApiTags('Autenticação')
 @Controller('auth')
 export class AuthController {
   constructor(
@@ -60,7 +63,7 @@ export class AuthController {
   @Post('login')
   async findAll(
     @Res() response: Response,
-    @Body() body: { organizacao: number; login: string; senha: string },
+    @Body() body: LoginAuthDto,
   ) {
     try {
       if (body.organizacao) {

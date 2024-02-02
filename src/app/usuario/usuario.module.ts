@@ -8,6 +8,7 @@ import {OrganizacaoModel} from "../organizacao/entities/organizacao.entity";
 import {LojaModel} from "../loja/entities/loja.entity";
 import {LojaService} from "../loja/loja.service";
 import Sql from 'mssql'
+import {DatabaseService} from "../../database/database.service";
 
 @Module({
   imports: [
@@ -19,6 +20,6 @@ import Sql from 'mssql'
     // }),
   ],
   controllers: [UsuarioController],
-  providers: [UsuarioService, LojaService],
+  providers: [UsuarioService, LojaService, DatabaseService],
 })
 export class UsuarioModule {}
