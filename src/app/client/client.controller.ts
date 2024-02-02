@@ -36,12 +36,8 @@ export class ClientController {
   @Post()
   async create(@Res() response: Response, @Body() createClientDto: CreateClientDto) {
     try{
-      const validCPF = this.validUtils.validarCPF(createClientDto.cpf);
-      if (!validCPF) return response.status(HttpStatus.BAD_REQUEST).json({message: 'CPF inválido.'});
-      const validStore = this.lojaService.findOne(createClientDto.id_loja);
-      if (!validStore) return response.status(HttpStatus.BAD_REQUEST).json({message: 'Loja informada inválida.'});
-      const existClientOnStore = await this.clientService.findOneClientOnStore(createClientDto.id_loja, createClientDto.cpf);
-      if (existClientOnStore) return response.status(HttpStatus.CONFLICT).json({message: 'Cliente já possui cadastro nesta loja.'})
+
+     // if (existClientOnStore) return response.status(HttpStatus.CONFLICT).json({message: 'Cliente já possui cadastro nesta loja.'})
       const newClient = await this.clientService.create(createClientDto);
       return response.status(HttpStatus.CREATED).json({message: 'Registro criado com sucesso!', cliente: {...newClient.dataValues}})
     }catch (erro) {

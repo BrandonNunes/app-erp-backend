@@ -29,6 +29,7 @@ export type QueryParamsUsesTypes = {
   empresa: string;
   filtro: string;
   usuario: string | null;
+  produto: string | null
   organizacao: string;
   limite: number
   idioma: string

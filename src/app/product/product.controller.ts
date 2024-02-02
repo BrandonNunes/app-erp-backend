@@ -1,120 +1,262 @@
-import {Controller, Get, Post, Body, Patch, Param, Delete, Res, HttpStatus, Put, Query} from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  Res,
+  HttpStatus,
+  Put,
+  Query,
+  UseGuards
+} from '@nestjs/common';
 import { ProductService } from './product.service';
 import { CreateProductDto } from './dto/create-product.dto';
-import { UpdateProductDto } from './dto/update-product.dto';
 import {Response} from "express";
-import {CreateTipoProductDto} from "./dto/create-tipo-product.dto";
 import {LojaService} from "../loja/loja.service";
 import {OrganizacaoService} from "../organizacao/organizacao.service";
+import {ApiBearerAuth, ApiQuery, ApiTags} from "@nestjs/swagger";
+import {DatabaseService} from "../../database/database.service";
+import {Table, Request, VarChar, Int, DateTime, Char, Bit, ConnectionPool, Decimal} from 'mssql'
+import {AuthGuard} from "../auth/auth.guard";
+import {DeleteProductDto} from "./dto/delete-product.dto";
 
 
 export type QueryParamsProduct = {
-  loja: string; organizacao: string; id: string;
+  empresa: string;
+ // filtro: string;
+  usuario: string | null;
+  produto: string | null
+  organizacao: string;
+  limite: number
+  idioma: string
+  sequencial: number
 }
-@Controller()
+@ApiTags('Produto')
+@ApiBearerAuth()
+@Controller('produto')
 export class ProductController {
   constructor(
       private readonly productService: ProductService,
       private readonly lojaService: LojaService,
       private readonly organizacaoService: OrganizacaoService,
+      private database: DatabaseService
       ) {}
 
-  @Post('produtos')
-  async createProduct(@Res() response: Response, @Body() newProdData: CreateProductDto) {
+  @Post()
+  async createProduct(@Res() response: Response, @Body() createProductDto: CreateProductDto) {
     try {
-      const validCode = await this.productService.findOneProductByCode(newProdData.codigo_produto);
-      if (validCode) return response.status(HttpStatus.CONFLICT).json({message: 'Código de produto já existe.'})
-      const tipoProd = await this.productService.findOneTypeProduct(newProdData.id_tipo_produto);
-      if (!tipoProd) return response.status(HttpStatus.BAD_REQUEST).json({ message: 'Tipo de produto informado não é válido.' });
-      const validOrg = await this.organizacaoService.findOneOrg(newProdData.id_organizacao);
-      if (!validOrg) return response.status(HttpStatus.BAD_REQUEST).json({ message: 'Organização informada não é válida.' });
-      if (newProdData.id_loja) {
-        const validLoja = await this.lojaService.findOneLojaForUpdate(newProdData.id_organizacao, newProdData.id_loja);
-        if (!validLoja) return response.status(HttpStatus.BAD_REQUEST).json({ message: 'A loja informada não é uma loja válida.' })
-      }
-      await this.productService.createNewProduct(newProdData);
-      return response.status(HttpStatus.CREATED).json(newProdData);
+      /**CREATE TABLE*/
+      const tempTableForList = new Table();
+      /**ADD COLUMNS AND TYPING*/
+      tempTableForList.columns.add('idtype', Int())
+      tempTableForList.columns.add('empresa', Int())
+      tempTableForList.columns.add('produto', VarChar(18))
+      tempTableForList.columns.add('descricao', VarChar(50))
+      tempTableForList.columns.add('medida_base', Int())
+      tempTableForList.columns.add('tipo_item', Int())
+      tempTableForList.columns.add('situacao', VarChar(20))
+      tempTableForList.columns.add('venda_padrao', Int())
+      tempTableForList.columns.add('venda_minima', Int())
+      tempTableForList.columns.add('venda_maxima', Int())
+      tempTableForList.columns.add('obrigar_rastreamento', Bit())
+      tempTableForList.columns.add('tamanho_numero_serie', Int())
+      tempTableForList.columns.add('eh_recarga', Bit())
+      tempTableForList.columns.add('eh_sem_estoque', Bit())
+      tempTableForList.columns.add('eh_assinatura', Bit())
+      tempTableForList.columns.add('marca', Int())
+      tempTableForList.columns.add('grupo', Int())
+      tempTableForList.columns.add('Id', Int())
+      tempTableForList.columns.add('venda_varejo', Int())
+      tempTableForList.columns.add('venda_atacado', Int())
+      tempTableForList.columns.add('codigoSAP', VarChar(18))
+      tempTableForList.columns.add('descricaoSAP', VarChar(50))
+      tempTableForList.columns.add('CodigoExterno', VarChar(20))
+      tempTableForList.columns.add('codigoEAN', VarChar(100))
+      tempTableForList.columns.add('eh_alfanumerico', Bit())
+      tempTableForList.columns.add('validade', Int())
+      tempTableForList.columns.add('nao_movimenta_financeiro', Bit())
+
+      /**ADD SEQUENTIAL idType*/
+      createProductDto.list = createProductDto.list.map((item, index) =>( {idtype: index+1, ...item}))
+      /**ADD ROWS*/
+      createProductDto.list.forEach((_, index) => {
+        tempTableForList.rows.add(...Object.values(createProductDto.list[index]))
+      })
+
+      const request = new Request(this.database.connection());
+      /**ADD VARIABLES IN PROCEDURE*/
+      request.input('organizacao', createProductDto.organizacao);
+      request.input('list', tempTableForList);
+      request.input('usuario', createProductDto.usuario);
+      /**EXECUTE PROCEDURE*/
+      const result = await request.execute('sp_Api_Produto_Inserir');
+      /**GET RETURN PROCEDURE*/
+      const returnProcedure = result.recordset;
+      /**VALIDATIONS AND RETURNS FOR CLIENT*/
+      returnProcedure.forEach((resp) => {
+        if (resp.erro === "true" || resp.erro === true) {
+          return response.status(400).json(resp);
+        }
+      })
+      return response.status(201).json(returnProcedure);
     }catch (erro) {
       console.log(erro);
       return response.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ message: 'Erro interno de servidor.', erro })
     }
   }
 
-  @Get('produtos')
-  async findAllProduct(@Res() response: Response, @Query() querys: QueryParamsProduct) {
+  @UseGuards(AuthGuard)
+  @ApiQuery({required: true, name: 'organizacao'})
+  @ApiQuery({required: false, name: 'limite'})
+  @ApiQuery({required: true, name: 'empresa'})
+  @ApiQuery({required: false, name: 'sequencial'})
+  @ApiQuery({required: false, name: 'produto'})
+  @Get()
+  async findAllProduct(@Res() response: Response, @Query() queryParams: QueryParamsProduct) {
+    if (!queryParams.organizacao) {
+      return response.status(HttpStatus.BAD_REQUEST).json({
+        message: 'O parametro [organizacao] deve ser informado.',
+      });
+    }
+    if (!queryParams.empresa) {
+      return response.status(HttpStatus.BAD_REQUEST).json({
+        message: 'O parametro [empresa] deve ser informado.',
+      });
+    }
     try{
-      if (!querys.organizacao) return response.status(HttpStatus.BAD_REQUEST).json({message: 'Por favor forneça uma organização para consulta.'})
-      const prods = await this.productService.findAllProducts(querys);
-      return response.status(HttpStatus.OK).json(prods);
+      const request = new Request(this.database.connection());
+      /**ADD VARIABLES IN PROCEDURE*/
+      request.input('organizacao', queryParams.organizacao);
+      request.input('empresa', queryParams.empresa);
+      queryParams.produto && request.input('produto', queryParams.produto);
+      request.input('usuario', queryParams.usuario);
+      queryParams.sequencial && request.input('sequencial', queryParams.sequencial);
+      request.input('limite', queryParams.sequencial ? 1 : queryParams.limite || 500);
+      // await request.input('idioma', queryParams.idioma);
+      /**EXECUTE PROCEDURE*/
+      const result = await request.execute('sp_Api_Produto_Obter');
+      /**GET RETURN PROCEDURE*/
+      const returnProcedure = result.recordset;
+      /**VALIDATIONS AND RETURNS FOR CLIENT*/
+      returnProcedure && returnProcedure.forEach((resp) => {
+        if (resp.erro === "true" || resp.erro === true) {
+          return response.status(400).json(resp);
+        }
+      })
+      return response.status(200).json(returnProcedure);
     }catch (erro) {
       console.log(erro);
       return response.status(HttpStatus.INTERNAL_SERVER_ERROR).json({message: 'Erro interno de servidor.', erro});
     }
   }
 
-  @Get('produtos/:id')
-  async findOneProduct(@Res() response: Response, @Param('id') id: string) {
+  @UseGuards(AuthGuard)
+  @Put()
+  async updateProduct(@Res() response: Response, @Body() updateProductData: CreateProductDto) {
     try {
-      const prod = await this.productService.findOneProduct(id);
-      if (!prod) return response.status(HttpStatus.NOT_FOUND).json({message: 'Produto não encontrado.'});
-    //  const companies = await this.productService.findAllCompany({organizacao: id});
-      return response.status(HttpStatus.OK).json(prod);
-    }catch (erro) {
-      console.log(erro);
-      return response.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ message: 'Erro interno de servidor', erro })
-    }
-  }
+      /**CREATE TABLE*/
+      const tempTableForList = new Table();
+      /**ADD COLUMNS AND TYPING*/
+      tempTableForList.columns.add('idtype', Int())
+      tempTableForList.columns.add('empresa', Int())
+      tempTableForList.columns.add('produto', VarChar(18))
+      tempTableForList.columns.add('descricao', VarChar(50))
+      tempTableForList.columns.add('medida_base', Int())
+      tempTableForList.columns.add('tipo_item', Int())
+      tempTableForList.columns.add('situacao', VarChar(20))
+      tempTableForList.columns.add('venda_padrao', Int())
+      tempTableForList.columns.add('venda_minima', Int())
+      tempTableForList.columns.add('venda_maxima', Int())
+      tempTableForList.columns.add('obrigar_rastreamento', Bit())
+      tempTableForList.columns.add('tamanho_numero_serie', Int())
+      tempTableForList.columns.add('eh_recarga', Bit())
+      tempTableForList.columns.add('eh_sem_estoque', Bit())
+      tempTableForList.columns.add('eh_assinatura', Bit())
+      tempTableForList.columns.add('marca', Int())
+      tempTableForList.columns.add('grupo', Int())
+      tempTableForList.columns.add('Id', Int())
+      tempTableForList.columns.add('venda_varejo', Int())
+      tempTableForList.columns.add('venda_atacado', Int())
+      tempTableForList.columns.add('codigoSAP', VarChar(18))
+      tempTableForList.columns.add('descricaoSAP', VarChar(50))
+      tempTableForList.columns.add('CodigoExterno', VarChar(20))
+      tempTableForList.columns.add('codigoEAN', VarChar(100))
+      tempTableForList.columns.add('eh_alfanumerico', Bit())
+      tempTableForList.columns.add('validade', Int())
+      tempTableForList.columns.add('nao_movimenta_financeiro', Bit())
 
-  @Put('produtos/:id')
-  async updateProduct(@Res() response: Response, @Param('id') id: string, @Body() newProdData: UpdateProductDto) {
-    const existOrg = await this.productService.findOneProduct(id);
-    if (!existOrg) return response.status(404).json({message: 'Produto inválida.'})
-    try {
-      await this.productService.updateProduct(id, newProdData);
-      return response.status(HttpStatus.ACCEPTED).json({ message: 'Produto atualizado', newProdData })
+      /**ADD SEQUENTIAL idType*/
+      updateProductData.list = updateProductData.list.map((item, index) =>( {idtype: index+1, ...item}))
+      /**ADD ROWS*/
+      updateProductData.list.forEach((_, index) => {
+        tempTableForList.rows.add(...Object.values(updateProductData.list[index]))
+      })
+
+      const request = new Request(this.database.connection());
+      /**ADD VARIABLES IN PROCEDURE*/
+      request.input('organizacao', updateProductData.organizacao);
+      request.input('list', tempTableForList);
+      request.input('usuario', updateProductData.usuario);
+      /**EXECUTE PROCEDURE*/
+      const result = await request.execute('sp_Api_Produto_Alterar');
+      /**GET RETURN PROCEDURE*/
+      const returnProcedure = result.recordset;
+      /**VALIDATIONS AND RETURNS FOR CLIENT*/
+      returnProcedure.forEach((resp) => {
+        if (resp.erro === "true" || resp.erro === true) {
+          return response.status(400).json(resp);
+        }
+      })
+      return response.status(201).json(returnProcedure);
     }catch (erro) {
       console.log(erro);
       return response.status(HttpStatus.INTERNAL_SERVER_ERROR).json({message: 'Erro interno de servidor.', erro})
     }
   }
 
-  @Delete('produtos/:id')
-  async removeProduct(@Res() response: Response, @Param('id') id: string) {
-    const existOrg = await this.productService.findOneProduct(id);
-    if (!existOrg) return response.status(404).json({message: 'Produto inválido.'});
+  @UseGuards(AuthGuard)
+  @Delete()
+  async removeProduct(@Res() response: Response,
+                      @Body() deleteProductDto: DeleteProductDto) {
     try {
-      await this.productService.removeProduct(id);
-      return response.status(HttpStatus.ACCEPTED).json({message: 'Registro removido com sucesso'})
+      /**CREATE TABLE*/
+      const tempTableForList = new Table();
+      /**ADD COLUMNS AND TYPING*/
+      tempTableForList.columns.add('idtype', Int())
+      tempTableForList.columns.add('sequencial', VarChar(20))
+
+      /**ADD SEQUENTIAL idType*/
+      deleteProductDto.list = deleteProductDto.list.map((item, index) =>( {idtype: index+1, ...item}))
+      /**ADD ROWS*/
+      deleteProductDto.list.forEach((_, index) => {
+        tempTableForList.rows.add(...Object.values(deleteProductDto.list[index]))
+      })
+
+      const request = new Request(this.database.connection());
+      /**ADD VARIABLES IN PROCEDURE*/
+      request.input('organizacao', deleteProductDto.organizacao);
+      request.input('empresa', deleteProductDto.empresa);
+      request.input('usuario', deleteProductDto.usuario);
+      request.input('list', tempTableForList);
+      request.input('idioma', 'PT-BR');
+      /**EXECUTE PROCEDURE*/
+      const result = await request.execute('sp_Api_Produto_Excluir');
+      /**GET RETURN PROCEDURE*/
+      const returnProcedure = result.recordset;
+      /**VALIDATIONS AND RETURNS FOR CLIENT*/
+      returnProcedure.forEach((resp) => {
+        if (resp.erro === "true" || resp.erro === true) {
+          return response.status(400).json(resp);
+        }
+      })
+      return response.status(HttpStatus.ACCEPTED).json(returnProcedure);
     }catch (erro) {
       console.log(erro);
       return response.status(HttpStatus.INTERNAL_SERVER_ERROR).json({message: 'Erro interno de servidor.', erro})
     }
   };
-  //Tipo produto
-  @Post('tipo-produto')
-  async createTipoProduct(@Res() response: Response, @Body() newTypeProdData: CreateTipoProductDto) {
-    try {
-      const validOrg = await this.organizacaoService.findOneOrg(newTypeProdData.id_organizacao);
-      if (!validOrg) return response.status(HttpStatus.BAD_REQUEST).json({ message: 'Organização informada não é válida.' });
-      if (newTypeProdData.id_loja) {
-        const validLoja = await this.lojaService.findOneLojaForUpdate(newTypeProdData.id_organizacao, newTypeProdData.id_loja);
-        if (!validLoja) return response.status(HttpStatus.BAD_REQUEST).json({ message: 'A loja informada não é uma loja válida.' })
-      }
-      await this.productService.createNewTipoProduto(newTypeProdData);
-      return response.status(HttpStatus.CREATED).json({message: 'Registro criado com sucesso.', registro: newTypeProdData});
-    }catch (erro) {
-      console.log(erro);
-      return response.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ message: 'Erro interno de servidor.', erro })
-    }
-  }
-  @Get('tipo-produto')
-  async findAllTipoProduct(@Res() response: Response, @Query() params: { organizacao: string }) {
-    try{
-      const tipoProd = await this.productService.findAllTipoProducts(params.organizacao);
-      return response.status(HttpStatus.OK).json(tipoProd);
-    }catch (erro) {
-      console.log(erro);
-      return response.status(HttpStatus.INTERNAL_SERVER_ERROR).json({message: 'Erro interno de servidor.', erro});
-    }
-  }
+
 }

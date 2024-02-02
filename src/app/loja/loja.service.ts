@@ -1,6 +1,5 @@
 import { Injectable } from '@nestjs/common';
 import { CreateLojaDto } from './dto/create-loja.dto';
-import { UpdateLojaDto } from './dto/update-loja.dto';
 import {InjectModel} from "@nestjs/sequelize";
 import {LojaModel} from "./entities/loja.entity";
 import {QueryParamsBusiness} from "./loja.controller";
@@ -42,13 +41,6 @@ export class LojaService {
     return this.lojaModel.findOne({where: {cpf_cnpj: cpf_cnpj}})
   }
 
-  update(id: string, updateLojaDto: UpdateLojaDto) {
-    return this.lojaModel.update(updateLojaDto, {
-      where: {
-        id
-      }
-    })
-  }
 
   remove(id: string) {
     return this.lojaModel.destroy({

@@ -1,14 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
 import { CreateProductDto } from './dto/create-product.dto';
-import { UpdateProductDto } from './dto/update-product.dto';
 import { Sequelize } from "sequelize-typescript";
 import {ProdutoModel} from "./entities/produto.entity";
 import {LojaModel} from "../loja/entities/loja.entity";
 import {TipoProdutoModel} from "./entities/tipo_produto.entity";
-import {CreateTipoProductDto} from "./dto/create-tipo-product.dto";
 import {QueryParamsProduct} from "./product.controller";
-import {Op} from "sequelize";
 
 @Injectable()
 export class ProductService {
@@ -36,22 +33,8 @@ export class ProductService {
   }
 
   async findAllProducts(querys: QueryParamsProduct) {
-    if (querys.loja) {
-      return this.productModel.findAll({
-        where: {
-          id_organizacao: querys.organizacao,
-          [Op.or]: {
-            id_loja: querys.loja,
-            produto_padrao: true,
-    }
-        }
-      })
-    }
-    if (querys.id) {
-      return this.productModel.findOne({
-        where: { id: querys.id, id_organizacao: querys.organizacao }
-      })
-    }
+
+
     return this.productModel.findAll({
       where: {
         id_organizacao: querys.organizacao,
@@ -75,9 +58,6 @@ export class ProductService {
     });
   }
 
-  updateProduct(id: string, prodData: UpdateProductDto) {
-    return this.productModel.update(prodData, { where: {id} });
-  }
 
   removeProduct(id: string) {
     return this.productModel.destroy({ where: {id} });
@@ -91,9 +71,6 @@ export class ProductService {
       })
     }
     return this.tipoProdutoModel.findAll();
-  }
-  async createNewTipoProduto(newTypeData: CreateTipoProductDto) {
-    return this.tipoProdutoModel.create({...newTypeData})
   }
 
   findOneTypeProduct(id: string) {

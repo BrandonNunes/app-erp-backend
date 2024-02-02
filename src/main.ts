@@ -8,6 +8,7 @@ import {LojaModule} from "./app/loja/loja.module";
 import {UsuarioModule} from "./app/usuario/usuario.module";
 import {AuthModule} from "./app/auth/auth.module";
 import * as basicAuth from "express-basic-auth";
+import {ProductModule} from "./app/product/product.module";
 async function bootstrap() {
   // config();
   const port = process.env.PORT || 3000;
@@ -34,7 +35,7 @@ async function bootstrap() {
         description: 'Enter JWT token',
         in: 'header',
       },)
-      .setTitle('Endpoints')
+      .setTitle('Endpoints Api Mira POS')
       .setDescription('API app POS')
       .setVersion('1.0')
       .addServer('http://localhost:5000/app', 'Local')
@@ -44,7 +45,8 @@ async function bootstrap() {
       .build();
   const document = SwaggerModule.createDocument(app, config, {include: [
       // OrganizacaoModule,
-      // LojaModule,
+          ProductModule,
+      LojaModule,
       AuthModule,
       UsuarioModule,
     ]});

@@ -9,10 +9,11 @@ import {LojaModel} from "../loja/entities/loja.entity";
 import {OrganizacaoModel} from "../organizacao/entities/organizacao.entity";
 import {LojaService} from "../loja/loja.service";
 import {OrganizacaoService} from "../organizacao/organizacao.service";
+import {DatabaseService} from "../../database/database.service";
 
 @Module({
   imports:[ SequelizeModule.forFeature([ProdutoModel, TipoProdutoModel, LojaModel, OrganizacaoModel]) ],
   controllers: [ProductController],
-  providers: [ProductService, LojaService, OrganizacaoService],
+  providers: [ProductService, LojaService, OrganizacaoService, DatabaseService],
 })
 export class ProductModule {}

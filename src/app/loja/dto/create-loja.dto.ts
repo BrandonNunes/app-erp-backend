@@ -1,95 +1,95 @@
 import {
+    ArrayMinSize,
+    IsEmail,
     IsEnum,
     IsNotEmpty,
     IsNumber, IsOptional,
-    MaxLength, ValidateIf
+    MaxLength, ValidateIf, ValidateNested
 } from 'class-validator';
 import {Column} from "sequelize-typescript";
 import {ApiProperty} from "@nestjs/swagger";
+import {Type} from "class-transformer";
 
-enum EnumTipoRegistro {
-    PJ = 'PJ',
-    PF = 'PF',
+export class ListCreateStoreDto {
+    @ApiProperty()
+    @IsNotEmpty({ message: 'O campo id deve ser informado.' })
+    razao_social: number
+    @ApiProperty()
+    @IsNotEmpty({ message: 'O campo cpf_cnpj deve ser informado.' })
+    cnpj_cpf: string
+    @ApiProperty()
+    @IsNotEmpty({ message: 'O campo cep deve ser informado.' })
+    cep: string
+    @ApiProperty()
+    @IsNotEmpty({ message: 'O campo uf deve ser informado.' })
+    uf: string
+    @ApiProperty()
+    @IsNotEmpty({ message: 'O campo tipo_logradouro deve ser informado.' })
+    tipo_logradouro: string
+    @ApiProperty()
+    @IsNotEmpty({ message: 'O campo endereco deve ser informado.' })
+    endereco: string
+    @ApiProperty()
+    @IsNotEmpty({ message: 'O campo logradouro deve ser informado.' })
+    logradouro: string
+    @ApiProperty()
+    @ValidateIf(value => value.complemento === undefined)
+    @IsNotEmpty({ message: 'O campo complemento deve ser informado.' })
+    complemento: string
+    @ApiProperty()
+    @IsNotEmpty({ message: 'O campo cidade deve ser informado.' })
+    cidade: number
+    @ApiProperty()
+    @IsNotEmpty({ message: 'O campo bairro deve ser informado.' })
+    bairro: number;
+
+    @ApiProperty()
+    @IsNotEmpty({ message: 'O campo contribuinte_ipi deve ser informado.' })
+    contribuinte_ipi: number
+
+    @ApiProperty()
+    @IsNotEmpty({ message: 'O campo id_regime_tributario deve ser informado.' })
+    id_regime_tributario: number
+
+    @ApiProperty()
+    @IsNotEmpty({ message: 'O campo fone_ddd1 deve ser informado.' })
+    fone_ddd1: string
+
+    @ApiProperty()
+    @IsNotEmpty({ message: 'O campo telefone1 deve ser informado.' })
+    telefone1: string
+
+    @ApiProperty()
+    @IsNotEmpty({ message: 'O campo situacao deve ser informado.' })
+    situacao: string
+
+    @ApiProperty()
+    @IsNotEmpty({ message: 'O campo empresa deve ser informado.' })
+    empresa: number
+
+    @ApiProperty()
+    @IsNotEmpty({ message: 'O campo CodigoExterno deve ser informado.' })
+    CodigoExterno: string
+    @ApiProperty()
+    @IsNotEmpty({ message: 'O campo nome_fantasia deve ser informado.' })
+    nome_fantasia: string
 }
 export class CreateLojaDto {
 
     @ApiProperty()
-    @IsNotEmpty({message: 'Uma organização deve ser informada.'})
-    @IsNumber({}, {message: 'Tipo de dado informado não é válido.(organização)'})
-    id_organizacao: number;
+    @IsNotEmpty({message: 'Uma organização deve ser informada'})
+    @IsNumber({}, {message: 'Organização deve ser um ID do tipo numero'})
+    organizacao: number;
 
-    @ApiProperty({enum: EnumTipoRegistro})
-    @IsEnum(EnumTipoRegistro, {message: 'O campo Tipo de Registro deve ser um valor válido.'})
-    tipo_registro: string;
-
+    // @MinLength(1, {message: 'List não pode estar vazio', each: true})
+    @ApiProperty({description: 'Lista de objetos com as propriedades do novo usuário', isArray: true, type: ListCreateStoreDto})
+    // @IsArray({each: true, message: 'O atributo list deve ser do tipo Array'})
+    @ValidateNested({ each: true })
+    @ArrayMinSize(1, {message: 'list deve conter ao menos 1(um) elemento.'})
+    @Type(() => ListCreateStoreDto)
+    list: ListCreateStoreDto[]
     @ApiProperty()
-    @ValidateIf((object, value) => object.tipo_registro === EnumTipoRegistro.PJ)
-    @IsNotEmpty({message: 'Razão social deve ser informada.'})
-    razao_social: string;
-
-    @ApiProperty()
-    @ValidateIf((object, value) => object.tipo_registro === EnumTipoRegistro.PJ)
-    @IsNotEmpty({message: 'Nome fantasia deve ser informada.'})
-    nome_fantasia: string;
-    @ApiProperty()
-    @IsNotEmpty({message: 'CPF/CNPJ deve ser informado.'})
-    @MaxLength(14, { message: 'Campo CPF/CNPJ excede o tamanho maximo permitido.' })
-    cpf_cnpj: string;
-    @ApiProperty()
-    @ValidateIf((object, value) => object.tipo_registro === EnumTipoRegistro.PF)
-    @IsNotEmpty({message: 'Nome deve ser informado.'})
-    nome: string;
-    @ApiProperty()
-    @IsNotEmpty({message: 'Telefone deve ser informado.'})
-    @MaxLength(13, {message: 'Telefone excede o tamanho maximo.'})
-    telefone1: string;
-    @ApiProperty({required: false})
-    @IsOptional()
-    @MaxLength(13, {message: 'Telefone2 excede o tamanho maximo.'})
-    telefone2: string;
-    @ApiProperty({required: false})
-    @IsOptional()
-    ativo: boolean;
-    @ApiProperty({required: false})
-    @IsOptional()
-    simples_nacional: boolean;
-    @ApiProperty({required: false})
-    @IsOptional()
-    regime_normal: boolean;
-    @ApiProperty({required: false})
-    @IsOptional()
-    sublimite_receita: boolean;
-    @ApiProperty({required: false})
-    @IsOptional()
-    contribuinte_ipi: boolean;
-    @ApiProperty()
-    @IsNotEmpty({message: 'CEP deve ser informado.'})
-    @MaxLength(8, { message: 'CEP excede o tamanho máximo.' })
-    cep: string;
-    @ApiProperty()
-    @IsNotEmpty({message: 'Estado deve ser informado.'})
-    estado: string;
-    @ApiProperty()
-    @IsNotEmpty({message: 'Cidade deve ser informado.'})
-    cidade: string;
-    @ApiProperty()
-    @IsNotEmpty({message: 'Bairro deve ser informado.'})
-    bairro: string;
-    @ApiProperty()
-    @IsNotEmpty({message: 'Rua deve ser informado.'})
-    rua: string;
-    @ApiProperty({required: false})
-    @IsOptional()
-    @IsNumber({}, {message: 'tipo de dado ao campo Número é inválido.'})
-    numero: string;
-    @ApiProperty({required: false})
-    @IsOptional()
-    @MaxLength(100, {message: 'Limite máximo para o campo complemento excedido(100).'})
-    complemento: string;
-    @ApiProperty({required: false})
-    @IsOptional()
-    matrix: boolean;
-    @ApiProperty({required: false})
-    @IsOptional()
-    id_matrix: string;
+    @ValidateIf(value => value.usuario === undefined)
+    @IsNotEmpty({message: 'Um usuario deve ser informado'})
+    usuario: string;
 }
