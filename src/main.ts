@@ -9,6 +9,8 @@ import {UsuarioModule} from "./app/usuario/usuario.module";
 import {AuthModule} from "./app/auth/auth.module";
 import * as basicAuth from "express-basic-auth";
 import {ProductModule} from "./app/product/product.module";
+import {ClientModule} from "./app/client/client.module";
+import {CatalogoModule} from "./app/catalogo/catalogo.module";
 async function bootstrap() {
   // config();
   const port = process.env.PORT || 3000;
@@ -49,6 +51,9 @@ async function bootstrap() {
       LojaModule,
       AuthModule,
       UsuarioModule,
+          ClientModule,
+          CatalogoModule,
+          AppModule
     ]});
   SwaggerModule.setup('docs', app, document, {swaggerOptions: {
       tagsSorter: 'alpha',

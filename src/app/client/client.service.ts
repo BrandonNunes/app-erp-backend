@@ -1,6 +1,5 @@
 import { Injectable } from '@nestjs/common';
 import { CreateClientDto } from './dto/create-client.dto';
-import { UpdateClientDto } from './dto/update-client.dto';
 import { Sequelize } from 'sequelize-typescript';
 import { Op, QueryTypes } from 'sequelize';
 import { Client } from './entities/client.entity';
@@ -18,20 +17,20 @@ export class ClientService {
   }
 
   getClients(queryParams: QueryParamsClientTypes) {
-    if (queryParams.id) {
-      return this.clienteModel.findOne({
-        where: {
-          id_loja: queryParams.loja,
-          ativo: queryParams.ativo != undefined ? queryParams.ativo : true,
-          id: queryParams.id,
-        },
-      });
-    }
+    // if (queryParams.id) {
+    //   return this.clienteModel.findOne({
+    //     where: {
+    //       id_loja: queryParams.loja,
+    //       ativo: queryParams.ativo != undefined ? queryParams.ativo : true,
+    //       id: queryParams.id,
+    //     },
+    //   });
+    // }
     return this.clienteModel.findAll({
-      where: {
-        id_loja: queryParams.loja,
-        ativo: queryParams.ativo != undefined ? queryParams.ativo : true,
-      },
+      // where: {
+      //   id_loja: queryParams.loja,
+      //   ativo: queryParams.ativo != undefined ? queryParams.ativo : true,
+      // },
     });
     // return this.clienteModel.findAll({attributes: ["nome", "cpf", "razao_social"],});
     //   return this.sequelize.query('EXEC sp_Api_Cliente_Obter @empresa=:empresa, @filtro=:filtro, @usuario=:usuario', {
@@ -53,7 +52,7 @@ export class ClientService {
     })
   }
 
-  update(id: string, updateClientDto: UpdateClientDto) {
+  update(id: string, updateClientDto) {
     return this.clienteModel.update({...updateClientDto}, {where: {id}});
   }
 

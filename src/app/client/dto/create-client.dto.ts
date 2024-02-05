@@ -32,13 +32,16 @@ export class ListCreateClientDto {
   rg_ie: string | null
   @ApiProperty()
   @ValidateIf(value => value.orgao_expeditor === undefined)
+  @IsString({message: 'Formato inválido para o campo orgao_expeditor, o tipo deve ser string'})
   @IsNotEmpty({ message: 'Um valor para orgao_expeditor deve ser informado.' })
-  orgao_expeditor: number| null
+  orgao_expeditor: string| null
   @ApiProperty()
   @IsNotEmpty({ message: 'O campo data_nascimento deve ser informado.' })
       // @IsDate({message: 'Formato de data inválido para o campo data_nascimento', },)
   data_nascimento: string;
   @ApiProperty()
+  @ValidateIf(value => value.segmento === undefined)
+  @IsNumber({}, {message: 'Tipo de dado inválido para o campo segmento'})
   @IsNotEmpty({ message: 'O campo segmento deve ser informado.' })
   segmento: number;
   @ApiProperty()
@@ -81,7 +84,7 @@ export class ListCreateClientDto {
   @ApiProperty()
   @ValidateIf(value => value.grupos === undefined)
   @IsNotEmpty({ message: 'O campo email deve ser informado.' })
-  @IsEmail(null, {message: 'Formato de email inválido.'})
+  @IsEmail({}, {message: 'Formato de email inválido.'})
   email: string
   @ApiProperty()
   @IsNotEmpty({ message: 'O campo CodigoExterno deve ser informado.' })

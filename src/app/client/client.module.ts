@@ -6,10 +6,11 @@ import { Client } from './entities/client.entity';
 import {LojaModel} from "../loja/entities/loja.entity";
 import ValidateUtils from "../utils/validateUtils";
 import {LojaService} from "../loja/loja.service";
+import {DatabaseService} from "../../database/database.service";
 
 @Module({
   imports: [SequelizeModule.forFeature([Client, LojaModel])],
   controllers: [ClientController],
-  providers: [ClientService, ValidateUtils, LojaService],
+  providers: [ClientService, ValidateUtils, LojaService, DatabaseService],
 })
 export class ClientModule {}

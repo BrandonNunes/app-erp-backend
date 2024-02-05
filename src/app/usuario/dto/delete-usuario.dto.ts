@@ -1,14 +1,9 @@
 import {
-  IsEmail,
   IsNotEmpty,
-  IsNumber, IsOptional,
-  IsString, MaxLength,
-  MinLength,
-  IsDate, IsArray, ValidateNested, ArrayMinSize, ValidateIf, isISO8601
+  IsNumber, ValidateNested, ArrayMinSize,
 } from 'class-validator';
 import { Type } from 'class-transformer';
-import {ApiProperty, getSchemaPath} from "@nestjs/swagger";
-import {SchemaObject} from "@nestjs/swagger/dist/interfaces/open-api-spec.interface";
+import {ApiProperty} from "@nestjs/swagger";
 
 export class ListDeleteUserDto {
   @ApiProperty()
