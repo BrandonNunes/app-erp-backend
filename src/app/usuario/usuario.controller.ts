@@ -18,10 +18,8 @@ import { CreateUsuarioDto } from './dto/create-usuario.dto';
 import {Table, Request, VarChar, Int, DateTime, Char, Bit, ConnectionPool} from 'mssql'
 // import { compareSync } from 'bcrypt';
 import { AuthGuard } from '../auth/auth.guard';
-import {DataType, Sequelize} from 'sequelize-typescript';
 import {LojaService} from "../loja/loja.service";
 import {ApiBearerAuth, ApiOperation, ApiQuery, ApiTags} from "@nestjs/swagger";
-import {DataTypes, QueryTypes} from "sequelize";
 import {DatabaseService} from "../../database/database.service";
 import {DeleteUsuarioDto} from "./dto/delete-usuario.dto";
 
@@ -62,13 +60,13 @@ export class UsuarioController {
       });
     }
     try {
-      const request = await new Request(this.database.connection());
+      const request = new Request(this.database.connection());
       /**ADD VARIABLES IN PROCEDURE*/
-      await request.input('organizacao', queryParams.organizacao);
-      await request.input('filtro', queryParams.filtro);
-      await request.input('usuario', queryParams.usuario);
-      await request.input('limite', queryParams.sequencial ? 1 : queryParams.limite || 500);
-      queryParams.sequencial && await request.input('sequencial', queryParams.sequencial);
+      request.input('organizacao', queryParams.organizacao);
+      request.input('filtro', queryParams.filtro);
+      request.input('usuario', queryParams.usuario);
+      request.input('limite', queryParams.sequencial ? 1 : queryParams.limite || 500);
+      queryParams.sequencial && request.input('sequencial', queryParams.sequencial);
      // await request.input('idioma', queryParams.idioma);
       /**EXECUTE PROCEDURE*/
       const result = await request.execute('sp_Api_Usuario_Obter');

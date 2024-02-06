@@ -18,6 +18,7 @@ import {ProductModule} from "./app/product/product.module";
 import {TipoProdutoModel} from "./app/product/entities/tipo_produto.entity";
 import {DatabaseService} from "./database/database.service";
 import { CatalogoModule } from './app/catalogo/catalogo.module';
+import { PedidoModule } from './app/pedido/pedido.module';
 
 
 @Module({
@@ -60,6 +61,7 @@ import { CatalogoModule } from './app/catalogo/catalogo.module';
     LojaModule,
     OrganizacaoModule,
     CatalogoModule,
+    PedidoModule,
   ],
   controllers: [AppController],
   providers: [AppService, DatabaseService],
