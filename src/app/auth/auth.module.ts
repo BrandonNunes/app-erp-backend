@@ -10,6 +10,7 @@ import {UsuarioModel} from "../usuario/entities/usuario.entity";
 import {OrganizacaoModel} from "../organizacao/entities/organizacao.entity";
 import {LojaModel} from "../loja/entities/loja.entity";
 import {UsuarioLojaModel} from "../usuario/entities/usuario_loja.entity";
+import {DatabaseService} from "../../database/database.service";
 
 @Module({
   imports: [
@@ -22,6 +23,6 @@ import {UsuarioLojaModel} from "../usuario/entities/usuario_loja.entity";
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, UsuarioService, JwtService],
+  providers: [AuthService, UsuarioService, JwtService, DatabaseService],
 })
 export class AuthModule {}

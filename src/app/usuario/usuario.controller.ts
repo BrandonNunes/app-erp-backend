@@ -263,11 +263,11 @@ export class UsuarioController {
         tempTableForList.rows.add(...Object.values(deleteUsuarioDto.list[index]))
       })
 
-      const request = await new Request(this.database.connection());
+      const request = new Request(this.database.connection());
       /**ADD VARIABLES IN PROCEDURE*/
-      await request.input('organizacao', deleteUsuarioDto.organizacao);
-      await request.input('list', tempTableForList);
-      await request.input('idioma', 'PT-BR');
+      request.input('organizacao', deleteUsuarioDto.organizacao);
+      request.input('list', tempTableForList);
+      request.input('idioma', 'PT-BR');
       /**EXECUTE PROCEDURE*/
       const result = await request.execute('sp_Api_Usuario_Excluir');
       /**GET RETURN PROCEDURE*/

@@ -9,6 +9,8 @@ import {UsuarioModel} from "../usuario/entities/usuario.entity";
 import {OrganizacaoModel} from "../organizacao/entities/organizacao.entity";
 import {ApiTags} from "@nestjs/swagger";
 import {LoginAuthDto} from "./dto/loginAuth.dto";
+import {DatabaseService} from "../../database/database.service";
+import {Char, DateTime, Int, Request, Table, VarChar} from "mssql";
 
 const expiresInToken = '1d'; // EX: '30s', '5m', '2h' '7d'
 @ApiTags('Autenticação')
@@ -18,9 +20,26 @@ export class AuthController {
     private readonly authService: AuthService,
     private jwtService: JwtService,
     private sequelize: Sequelize,
+    private database: DatabaseService
   ) {}
 
   /** Função responsável por Validar as credenciais e gerar o JWT */
+
+  async generateJWT(userData: any) {
+    // Gerando JWT
+    const payload = {
+      sub: userData.id,
+      nome: userData.nome,
+      organizacao: userData.idOrganizacao,
+      //  master: userData.usuario_master,
+      super_user: userData.super_usuario
+    };
+    const tokenJWT = await this.jwtService.signAsync(payload, {
+      privateKey: jwtConstants.secret,
+      expiresIn: expiresInToken,
+    });
+    return {tokenJWT}
+  }
   async autenticateUser(passSent: string, userData: UsuarioModel, response: Response) {
     // const comparePass = compareSync(passSent, userData.senha)
     const comparePass: any = await this.sequelize.query(
@@ -66,57 +85,95 @@ export class AuthController {
     @Body() body: LoginAuthDto,
   ) {
     try {
-      if (body.organizacao) {
-        const validOrganization = await this.authService.validateOrganization(
-          body.organizacao,
-        );
-        if (!validOrganization) {
-          return response.status(HttpStatus.NOT_FOUND).json({
-            message: 'Organização inexistente.',
-          });
-        }
+      /**CREATE TABLE*/
+      const tempTableForList = new Table();
+      /**ADD COLUMNS AND TYPING*/
+      tempTableForList.columns.add('idtype', Int())
+      tempTableForList.columns.add('id_usuario', Int())
+      tempTableForList.columns.add('usuario', VarChar(50))
+      tempTableForList.columns.add('senha', VarChar(100))
 
-        if (this.authService.validIsEmail(body.login)) {
-          const user = await this.authService.searchUsersByEmail(
-            body.login,
-            body.organizacao,
-          );
-          if (typeof user === 'object') {
-            if (!user) {
-              return response
-                .status(HttpStatus.UNAUTHORIZED)
-                .json({ message: 'Falha na autenticação' });
-            }
-            const userData = user as UsuarioModel;
-            // Logica para login
-            return this.autenticateUser(body.senha, userData, response);
-          }
-        } else {
-          const user = await this.authService.searchUsersByCpfCnpj(
-            body.login,
-            body.organizacao,
-          );
-          if (typeof user === 'object') {
-            if (!user) {
-              return response
-                .status(HttpStatus.UNAUTHORIZED)
-                .json({ message: 'Falha na autenticação' });
-            }
-            /**Logica para login*/
-            const userData = user as UsuarioModel;
-            return this.autenticateUser(body.senha, userData, response);
-          }
-          console.log('é cpfCnpj');
+      /**ADD SEQUENTIAL idType*/
+      body.list = body.list.map((item, index) =>( {idtype: index+1, id_usuario: 0, ...item}))
+      /**ADD ROWS*/
+      body.list.forEach((_, index) => {
+        tempTableForList.rows.add(...Object.values(body.list[index]))
+      })
+
+      const request = new Request(this.database.connection());
+      /**ADD VARIABLES IN PROCEDURE*/
+      request.input('organizacao', body.organizacao);
+      request.input('list', tempTableForList);
+      request.input('idioma', 'PT-BR');
+      /**EXECUTE PROCEDURE*/
+      const result = await request.execute('sp_Api_Login_Autenticar');
+      /**GET RETURN PROCEDURE*/
+      const returnProcedure = result.recordset;
+      /**VALIDATIONS AND RETURNS FOR CLIENT*/
+      returnProcedure.forEach((resp) => {
+        if (resp.validar_organizacao) {
+          return response.status(HttpStatus.CONFLICT).json(returnProcedure);
         }
-      }
-      // Caso não seja informado organização
-      if (this.authService.validIsEmail(body.login)) {
-        const users = await this.authService.searchUsersByEmail(body.login);
-        return this.validateNoOrg(body.senha, users as UsuarioModel[], response);
-      } else {
-        const users = await this.authService.searchUsersByCpfCnpj(body.login);
-        return this.validateNoOrg(body.senha, users as UsuarioModel[], response);
-      }
+        if (resp.erro === "true" || resp.erro === true) {
+          return response.status(401).json(resp);
+        }
+      })
+      const { tokenJWT } = await this.generateJWT(returnProcedure[0])
+      return response.status(HttpStatus.OK).json({
+        acessToken: tokenJWT,
+        ...returnProcedure[0]
+      });
+      // if (body.organizacao) {
+      //   const validOrganization = await this.authService.validateOrganization(
+      //     body.organizacao,
+      //   );
+      //   if (!validOrganization) {
+      //     return response.status(HttpStatus.NOT_FOUND).json({
+      //       message: 'Organização inexistente.',
+      //     });
+      //   }
+      //
+      //   if (this.authService.validIsEmail(body.login)) {
+      //     const user = await this.authService.searchUsersByEmail(
+      //       body.login,
+      //       body.organizacao,
+      //     );
+      //     if (typeof user === 'object') {
+      //       if (!user) {
+      //         return response
+      //           .status(HttpStatus.UNAUTHORIZED)
+      //           .json({ message: 'Falha na autenticação' });
+      //       }
+      //       const userData = user as UsuarioModel;
+      //       // Logica para login
+      //       return this.autenticateUser(body.senha, userData, response);
+      //     }
+      //   } else {
+      //     const user = await this.authService.searchUsersByCpfCnpj(
+      //       body.login,
+      //       body.organizacao,
+      //     );
+      //     if (typeof user === 'object') {
+      //       if (!user) {
+      //         return response
+      //           .status(HttpStatus.UNAUTHORIZED)
+      //           .json({ message: 'Falha na autenticação' });
+      //       }
+      //       /**Logica para login*/
+      //       const userData = user as UsuarioModel;
+      //       return this.autenticateUser(body.senha, userData, response);
+      //     }
+      //     console.log('é cpfCnpj');
+      //   }
+      // }
+      // // Caso não seja informado organização
+      // if (this.authService.validIsEmail(body.login)) {
+      //   const users = await this.authService.searchUsersByEmail(body.login);
+      //   return this.validateNoOrg(body.senha, users as UsuarioModel[], response);
+      // } else {
+      //   const users = await this.authService.searchUsersByCpfCnpj(body.login);
+      //   return this.validateNoOrg(body.senha, users as UsuarioModel[], response);
+      // }
 
       // return response.json({});
     } catch (erro) {
