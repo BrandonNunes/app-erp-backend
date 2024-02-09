@@ -35,7 +35,7 @@ export type QueryParamsBusiness = {
 
 @ApiTags('Loja')
 @ApiBearerAuth()
-@Controller('loja')
+@Controller()
 export class LojaController {
   constructor(
       private readonly lojaService: LojaService,
@@ -46,7 +46,7 @@ export class LojaController {
   }
 
   @UseGuards(AuthGuard)
-  @Post()
+  @Post('loja')
   async createStore(@Res() response: Response, @Body() createLojaDto: CreateLojaDto) {
     try {
       // const organization = createLojaDto.organizacao;
@@ -114,7 +114,7 @@ export class LojaController {
   @ApiQuery({required: false, name: 'filtro'})
   @ApiQuery({required: false, name: 'sequencial'})
   @UseGuards(AuthGuard)
-  @Get()
+  @Get('loja')
   async findAllStores(@Res() response: Response, @Query() queryParams: QueryParamsBusiness ) {
     if (!queryParams.organizacao) {
       return response.status(HttpStatus.BAD_REQUEST).json({
@@ -150,7 +150,7 @@ export class LojaController {
   }
 
   @UseGuards(AuthGuard)
-  @Put()
+  @Put('loja')
   async updateCompany(@Res() response: Response, @Body() updateLojaDto: CreateLojaDto) {
     try {
       /**CREATE TABLE*/
@@ -205,7 +205,7 @@ export class LojaController {
   }
 
   @UseGuards(AuthGuard)
-  @Delete()
+  @Delete('loja')
   async removeCompany(@Res() response: Response, @Body() deleteLojaDto: DeleteStoreDto) {
     try {
       /**CREATE TABLE*/
@@ -241,6 +241,51 @@ export class LojaController {
     } catch (erro) {
       console.log(erro);
       return response.status(HttpStatus.INTERNAL_SERVER_ERROR).json({message: 'Erro interno de servidor.', erro})
+    }
+  }
+
+  @ApiQuery({required: true, name: 'organizacao'})
+  @ApiQuery({required: false, name: 'limite'})
+  @ApiQuery({required: true, name: 'filtro'})
+  @ApiQuery({required: false, name: 'sequencial'})
+  @UseGuards(AuthGuard)
+  @Get('lojausuario')
+  async findAllStoresByUser(@Res() response: Response, @Query() queryParams: QueryParamsBusiness ) {
+    if (!queryParams.organizacao) {
+      return response.status(HttpStatus.BAD_REQUEST).json({
+        message: 'O parametro [organizacao] deve ser informado.',
+      });
+    }
+    if (!queryParams.filtro) {
+      return response.status(HttpStatus.BAD_REQUEST).json({
+        message: 'O parametro [filtro] deve ser informado.',
+      });
+    }
+    try {
+      const request = new Request(this.database.connection());
+      /**ADD VARIABLES IN PROCEDURE*/
+      request.input('organizacao', queryParams.organizacao);
+      request.input('filtro', queryParams.filtro);
+     // await request.input('usuario', queryParams.usuario);
+      request.input('limite', queryParams.sequencial ? 1 : queryParams.limite || 500);
+      queryParams.sequencial && request.input('sequencial', queryParams.sequencial);
+      // await request.input('idioma', queryParams.idioma);
+      /**EXECUTE PROCEDURE*/
+      const result = await request.execute('sp_Api_LojaUsuario_Obter');
+      /**GET RETURN PROCEDURE*/
+      const returnProcedure = result.recordset;
+      /**VALIDATIONS AND RETURNS FOR CLIENT*/
+      returnProcedure && returnProcedure.forEach((resp) => {
+        if (resp.erro === "true" || resp.erro === true) {
+          return response.status(400).json(resp);
+        }
+      })
+      return response.status(200).json(returnProcedure);
+    } catch (erro) {
+      console.log(erro);
+      throw new HttpException(erro, HttpStatus.INTERNAL_SERVER_ERROR, {
+        cause: erro,
+      });
     }
   }
 }
