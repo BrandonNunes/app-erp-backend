@@ -76,6 +76,7 @@ export class PedidoController {
       createPedidoDto.listItem.forEach((_, index) => {
         tempTableForListItem.rows.add(...Object.values(createPedidoDto.listItem[index]))
       });
+      
       /** CREATE TABLE LIST ITEM ATRIBUTO*/
       const tempTableForListItemAtributo = new Table();
       /**ADD COLUMNS AND TYPING*/

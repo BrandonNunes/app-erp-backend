@@ -143,5 +143,43 @@ export class AppController {
     }
   }
 
+  // ENDPOINTS PARA APOIO APP MOBILE
+  @ApiQuery({required: true, name: 'empresa'})
+  @ApiQuery({required: true, name: 'data_inicial'})
+  @ApiQuery({required: false, name: 'data_final'})
+  @Get('vendido-hoje')
+  async obterVendidoNoDia(@Res() response: Response,
+                   @Query() queryParams: QueryParamsCepTypes) {
+    if (!queryParams.cep) {
+      return response.status(HttpStatus.BAD_REQUEST).json({
+        message: 'O parametro [cep] deve ser informado.',
+      });
+    }
+    try {
+      const request = new Request(this.database.connection());
+      /**ADD VARIABLES IN PROCEDURE*/
+      request.input('cep', queryParams.cep);
+      request.input('limite', queryParams.sequencial ? 1 : queryParams.limite || 500);
+      request.input('sequencial', queryParams.sequencial || 0);
+      // await request.input('idioma', queryParams.idioma);
+      /**EXECUTE PROCEDURE*/
+      const result = await request.execute('sp_Api_CepMira_Obter');
+      /**GET RETURN PROCEDURE*/
+      const returnProcedure = result.recordset;
+      /**VALIDATIONS AND RETURNS FOR CLIENT*/
+      returnProcedure && returnProcedure.forEach((resp) => {
+        if (resp.erro === "true" || resp.erro === true) {
+          return response.status(400).json(resp);
+        }
+      })
+      return response.status(200).json(returnProcedure);
+    } catch (erro) {
+      console.log(erro);
+      throw new HttpException(erro, HttpStatus.INTERNAL_SERVER_ERROR, {
+        cause: erro,
+      });
+    }
+  }
+
 
 }
