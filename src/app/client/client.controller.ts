@@ -21,7 +21,7 @@ import {LojaService} from "../loja/loja.service";
 import {Bit, Char, DateTime, Int, Request, Table, VarChar} from "mssql";
 import {DatabaseService} from "../../database/database.service";
 import {DeleteClientDto} from "./dto/delete-client.dto";
-import {ApiTags} from "@nestjs/swagger";
+import {ApiBearerAuth, ApiQuery, ApiTags} from "@nestjs/swagger";
 
 export type QueryParamsClientTypes = {
   empresa: string;
@@ -33,6 +33,7 @@ export type QueryParamsClientTypes = {
 };
 
 @ApiTags('Clientes')
+@ApiBearerAuth()
 @Controller('cliente')
 export class ClientController {
   constructor(
@@ -104,6 +105,11 @@ export class ClientController {
   }
 
  @UseGuards(AuthGuard)
+ @ApiQuery({required: true, name: 'empresa'})
+ @ApiQuery({required: false, name: 'limite'})
+ @ApiQuery({required: false, name: 'sequencial'})
+ @ApiQuery({required: false, name: 'filtro'})
+ @ApiQuery({required: false, name: 'usuario'})
   @Get()
   async findAll(
     @Res() response: Response,

@@ -41,8 +41,10 @@ async function bootstrap() {
       .setTitle('Endpoints Api Mira POS')
       .setDescription('API app POS')
       .setVersion('1.0')
-      .addServer('http://localhost:5000/app', 'Local')
-      .addServer('http://localhost:3000/app', 'Local 2')
+      .addServer('http://201.49.29.61:5000/app', 'Local')
+      .addServer('http://201.49.29.61:4000/app', 'Local 2')
+      // .addServer('http://10.177.51.219:5000/app', 'Local 2')
+      // .addServer('http://10.177.51.219:4000/app', 'Local 2')
       //.setBasePath('app')
       // .addTag('cats')
       .build();
