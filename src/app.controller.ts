@@ -21,6 +21,11 @@ export type QueryParamsCepTypes = {
   idioma: string
   sequencial: number
 };
+export type QueryParamsSellerInDateTypes = {
+  empresa: string
+  data_inicial: string
+  data_final?: string
+};
 @ApiTags('Outros')
 @ApiBearerAuth()
 @Controller()
@@ -223,21 +228,42 @@ export class AppController {
   @ApiQuery({required: false, name: 'data_final'})
   @Get('vendido-hoje')
   async obterVendidoNoDia(@Res() response: Response,
-                   @Query() queryParams: QueryParamsCepTypes) {
-    if (!queryParams.cep) {
+                   @Query() queryParams: QueryParamsSellerInDateTypes) {
+                    console.log(this.appService.validDate(queryParams.data_inicial))
+    if (!queryParams.empresa) {
       return response.status(HttpStatus.BAD_REQUEST).json({
-        message: 'O parametro [cep] deve ser informado.',
+        message: 'O parametro [empresa] deve ser informado.',
       });
+    }
+    if (!queryParams.data_inicial) {
+      return response.status(HttpStatus.BAD_REQUEST).json({
+        message: 'O parametro [data_inicial] deve ser informado.',
+      });
+    }
+    if (!this.appService.validDate(queryParams.data_inicial)) {
+      return response.status(HttpStatus.BAD_REQUEST).json({message: 'Formato de data inválido, esperado: yyyy-MM-dd'});
+    }
+    if (queryParams.data_final && !this.appService.validDate(queryParams.data_final)) {
+      return response.status(HttpStatus.BAD_REQUEST).json({message: 'Formato de data inválido, esperado: yyyy-MM-dd'});
     }
     try {
       const request = new Request(this.database.connection());
-      /**ADD VARIABLES IN PROCEDURE*/
-      request.input('cep', queryParams.cep);
-      request.input('limite', queryParams.sequencial ? 1 : queryParams.limite || 500);
-      request.input('sequencial', queryParams.sequencial || 0);
-      // await request.input('idioma', queryParams.idioma);
-      /**EXECUTE PROCEDURE*/
-      const result = await request.execute('sp_Api_CepMira_Obter');
+      const result = await request.query(`
+      SELECT 
+        empresa, 
+        pedido, 
+        data_pedido , 
+        situacao , 
+        valor_total , 
+        valor_liquido , 
+        valor_desconto , 
+        Id 
+      FROM pedidos 
+      WHERE empresa = ${queryParams.empresa} 
+      AND data_pedido >= '${queryParams.data_inicial}' 
+      AND data_pedido <= '${queryParams.data_final ?? queryParams.data_inicial} 23:59:00'
+      `)
+     // const result = await request.execute('sp_Api_CepMira_Obter');
       /**GET RETURN PROCEDURE*/
       const returnProcedure = result.recordset;
       /**VALIDATIONS AND RETURNS FOR CLIENT*/
