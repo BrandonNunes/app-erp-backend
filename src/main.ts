@@ -2,6 +2,8 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { ValidationPipe } from '@nestjs/common';
+import { NestExpressApplication } from '@nestjs/platform-express';
+import { join } from 'path';
 import {OrganizacaoModule} from "./app/organizacao/organizacao.module";
 import {LojaModel} from "./app/loja/entities/loja.entity";
 import {LojaModule} from "./app/loja/loja.module";
@@ -15,7 +17,7 @@ import {PedidoModule} from "./app/pedido/pedido.module";
 async function bootstrap() {
   // config();
   const port = process.env.PORT || 3000;
-  const app = await NestFactory.create(AppModule, { cors: {
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, { cors: {
     origin: '*',
       preflightContinue: true
     } });
@@ -67,6 +69,10 @@ async function bootstrap() {
     customSiteTitle: 'MiraDocs',});
   app.setGlobalPrefix('app', { exclude: ['docs'] });
   app.useGlobalPipes(new ValidationPipe());
+    app.useStaticAssets(join(__dirname, '..', 'public'), {
+        prefix: '/images/',
+
+    });
   await app.listen(port, () => {
     console.log('server running on port: ' + port);
   });
