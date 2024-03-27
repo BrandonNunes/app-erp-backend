@@ -22,6 +22,7 @@ import {DatabaseService} from "../../database/database.service";
 import {Table, Request, VarChar, Int, DateTime, Char, Bit, ConnectionPool, Decimal} from 'mssql'
 import {AuthGuard} from "../auth/auth.guard";
 import {DeleteProductDto} from "./dto/delete-product.dto";
+import { CreateProductMobDto } from './dto/create-productMOB.dto';
 
 
 export type QueryParamsProduct = {
@@ -36,7 +37,7 @@ export type QueryParamsProduct = {
 }
 @ApiTags('Produto')
 @ApiBearerAuth()
-@Controller('produto')
+@Controller()
 export class ProductController {
   constructor(
       private readonly productService: ProductService,
@@ -45,7 +46,8 @@ export class ProductController {
       private database: DatabaseService
       ) {}
 
-  @Post()
+  @UseGuards(AuthGuard)
+  @Post('produto')
   async createProduct(@Res() response: Response, @Body() createProductDto: CreateProductDto) {
     try {
       /**CREATE TABLE*/
@@ -104,6 +106,7 @@ export class ProductController {
       return response.status(201).json(returnProcedure);
     }catch (erro) {
       console.log(erro);
+      console.timeEnd('time error')
       return response.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ message: 'Erro interno de servidor.', erro })
     }
   }
@@ -114,7 +117,7 @@ export class ProductController {
   @ApiQuery({required: true, name: 'empresa'})
   @ApiQuery({required: false, name: 'sequencial'})
   @ApiQuery({required: false, name: 'produto'})
-  @Get()
+  @Get('produto')
   async findAllProduct(@Res() response: Response, @Query() queryParams: QueryParamsProduct) {
     if (!queryParams.organizacao) {
       return response.status(HttpStatus.BAD_REQUEST).json({
@@ -154,7 +157,7 @@ export class ProductController {
   }
 
   @UseGuards(AuthGuard)
-  @Put()
+  @Put('produto')
   async updateProduct(@Res() response: Response, @Body() updateProductData: CreateProductDto) {
     try {
       /**CREATE TABLE*/
@@ -218,7 +221,7 @@ export class ProductController {
   }
 
   @UseGuards(AuthGuard)
-  @Delete()
+  @Delete('produto')
   async removeProduct(@Res() response: Response,
                       @Body() deleteProductDto: DeleteProductDto) {
     try {
@@ -258,5 +261,104 @@ export class ProductController {
       return response.status(HttpStatus.INTERNAL_SERVER_ERROR).json({message: 'Erro interno de servidor.', erro})
     }
   };
+
+  //USO MOBILE
+  @UseGuards(AuthGuard)
+  @Post('produtomob')
+  async createProductMobile(@Res() response: Response, @Body() createProductDto: CreateProductMobDto) {
+    try {
+      /**CREATE TABLE*/
+      const tempTableForList = new Table();
+      /**ADD COLUMNS AND TYPING*/
+      tempTableForList.columns.add('idtype', Int())
+      tempTableForList.columns.add('Id', Int())    
+      tempTableForList.columns.add('empresa', Int())
+      tempTableForList.columns.add('produto', VarChar(18))
+      tempTableForList.columns.add('descricao', VarChar(50))
+      tempTableForList.columns.add('codigoEAN', VarChar(100))
+      tempTableForList.columns.add('tipo_item', Int())
+      tempTableForList.columns.add('venda_padrao', Int())
+      tempTableForList.columns.add('venda_minima', Int())
+      tempTableForList.columns.add('venda_maxima', Int())
+      tempTableForList.columns.add('CodigoExterno', VarChar(20))
+     
+          /**ADD SEQUENTIAL idType*/
+      createProductDto.list = createProductDto.list.map((item, index) =>( {idtype: index+1, ...item}))
+      /**ADD ROWS*/
+      createProductDto.list.forEach((_, index) => {
+        tempTableForList.rows.add(...Object.values(createProductDto.list[index]))
+      })
+
+      const request = new Request(this.database.connection());
+      /**ADD VARIABLES IN PROCEDURE*/
+      request.input('organizacao', createProductDto.organizacao);
+      request.input('list', tempTableForList);
+      request.input('usuario', createProductDto.usuario);
+      /**EXECUTE PROCEDURE*/
+      const result = await request.execute('sp_Api_ProdutoMob_Inserir');
+      /**GET RETURN PROCEDURE*/
+      const returnProcedure = result.recordset;
+      /**VALIDATIONS AND RETURNS FOR CLIENT*/
+      returnProcedure.forEach((resp) => {
+        if (resp.erro === "true" || resp.erro === true) {
+          return response.status(400).json(resp);
+        }
+      })
+      return response.status(201).json(returnProcedure);
+    }catch (erro) {
+      console.log(erro);
+    
+      return response.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ message: 'Erro interno de servidor.', erro })
+    }
+  }
+
+  @UseGuards(AuthGuard)
+  @Put('produtomob')
+  async updateProductMobile(@Res() response: Response, @Body() createProductDto: CreateProductMobDto) {
+    try {
+      /**CREATE TABLE*/
+      const tempTableForList = new Table();
+      /**ADD COLUMNS AND TYPING*/
+      tempTableForList.columns.add('idtype', Int())
+      tempTableForList.columns.add('Id', Int())
+      tempTableForList.columns.add('empresa', Int())
+      tempTableForList.columns.add('produto', VarChar(18))
+      tempTableForList.columns.add('descricao', VarChar(50))
+      tempTableForList.columns.add('codigoEAN', VarChar(100))
+      tempTableForList.columns.add('tipo_item', Int())
+      tempTableForList.columns.add('venda_padrao', Int())
+      tempTableForList.columns.add('venda_minima', Int())
+      tempTableForList.columns.add('venda_maxima', Int())
+      tempTableForList.columns.add('CodigoExterno', VarChar(20))
+     
+          /**ADD SEQUENTIAL idType*/
+      createProductDto.list = createProductDto.list.map((item, index) =>( {idtype: index+1, ...item}))
+      /**ADD ROWS*/
+      createProductDto.list.forEach((_, index) => {
+        tempTableForList.rows.add(...Object.values(createProductDto.list[index]))
+      })
+
+      const request = new Request(this.database.connection());
+      /**ADD VARIABLES IN PROCEDURE*/
+      request.input('organizacao', createProductDto.organizacao);
+      request.input('list', tempTableForList);
+      request.input('usuario', createProductDto.usuario);
+      /**EXECUTE PROCEDURE*/
+      const result = await request.execute('sp_Api_ProdutoMob_Alterar');
+      /**GET RETURN PROCEDURE*/
+      const returnProcedure = result.recordset;
+      /**VALIDATIONS AND RETURNS FOR CLIENT*/
+      returnProcedure.forEach((resp) => {
+        if (resp.erro === "true" || resp.erro === true) {
+          return response.status(400).json(resp);
+        }
+      })
+      return response.status(201).json(returnProcedure);
+    }catch (erro) {
+      console.log(erro);
+      return response.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ message: 'Erro interno de servidor.', erro })
+    }
+  }
+
 
 }
