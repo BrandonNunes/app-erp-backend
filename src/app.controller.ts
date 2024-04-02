@@ -26,6 +26,15 @@ export type QueryParamsSellerInDateTypes = {
   data_inicial: string
   data_final?: string
 };
+type QueryParamsRelatorioMob = {
+  empresa: number;
+  tipo: number;
+  data_inicial: string;
+  data_final: string;
+  usuario?: string
+  sequencial?: number
+  limite?: number
+}
 @ApiTags('Outros')
 @ApiBearerAuth()
 @Controller()
@@ -264,6 +273,65 @@ export class AppController {
       AND data_pedido <= '${queryParams.data_final ?? queryParams.data_inicial} 23:59:00'
       `)
      // const result = await request.execute('sp_Api_CepMira_Obter');
+      /**GET RETURN PROCEDURE*/
+      const returnProcedure = result.recordset;
+      /**VALIDATIONS AND RETURNS FOR CLIENT*/
+      returnProcedure && returnProcedure.forEach((resp) => {
+        if (resp.erro === "true" || resp.erro === true) {
+          return response.status(400).json(resp);
+        }
+      })
+      return response.status(200).json(returnProcedure);
+    } catch (erro) {
+      console.log(erro);
+      throw new HttpException(erro, HttpStatus.INTERNAL_SERVER_ERROR, {
+        cause: erro,
+      });
+    }
+  }
+
+
+  @UseGuards(AuthGuard)
+  @ApiQuery({required: true, name: 'empresa'})
+  @ApiQuery({required: true, name: 'tipo'})
+  @ApiQuery({required: false, name: 'limite'})
+  @ApiQuery({required: false, name: 'sequencial'})
+  @ApiQuery({required: true, name: 'data_inicial'})
+  @ApiQuery({required: true, name: 'data_final'})
+  @ApiQuery({required: false, name: 'usuario'})
+  @Get('relatoriomob')
+  async getRelatorioMob(@Res() response: Response,
+                            @Query() queryParams: QueryParamsRelatorioMob) {
+    if (!queryParams.empresa) {
+      return response.status(HttpStatus.BAD_REQUEST).json({
+        message: 'O parametro [empresa] deve ser informado.',
+      });
+    }else if (!queryParams.data_inicial) {
+      return response.status(HttpStatus.BAD_REQUEST).json({
+        message: 'O parametro [data_inicial] deve ser informado.',
+      });
+    }else if (!queryParams.data_final) {
+      return response.status(HttpStatus.BAD_REQUEST).json({
+        message: 'O parametro [data_final] deve ser informado.',
+      });
+    }else if (!queryParams.tipo) {
+      return response.status(HttpStatus.BAD_REQUEST).json({
+        message: 'O parametro [tipo] deve ser informado.',
+      });
+    }
+    try {
+      const request = new Request(this.database.connection());
+      /**ADD VARIABLES IN PROCEDURE*/
+      request.input('empresa', queryParams.empresa);
+      request.input('tipo', queryParams.tipo);
+      request.input('data_inicial', queryParams.data_inicial);
+      request.input('data_final', queryParams.data_final);
+      request.input('usuario', queryParams.usuario);
+      request.input('limite', queryParams.sequencial ? 1 : queryParams.limite || 500);
+      request.input('sequencial', queryParams.sequencial || 0);
+      // await request.input('idioma', queryParams.idioma);
+      /**EXECUTE PROCEDURE*/
+      const result = await request.execute('sp_Api_RelatorioMob_Obter');
       /**GET RETURN PROCEDURE*/
       const returnProcedure = result.recordset;
       /**VALIDATIONS AND RETURNS FOR CLIENT*/
